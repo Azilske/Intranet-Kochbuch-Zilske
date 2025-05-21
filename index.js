@@ -93,6 +93,8 @@ app.post('/register', async (req, res) => {
   }
 });
 
+const authRoutes = require('./routes/auth'); // Authentifizierungsrouten importieren
+app.use('/', authRoutes); // Routen unter der Basis-URL / verfügbar machen
 
 /**
  * Startet den Express-Server
