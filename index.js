@@ -3,17 +3,31 @@
  * @module index
  */
 
+require('dotenv').config(); // lädt die .env-Datei
+
 // Importiert das Express-Framework zur Erstellung eines Webservers
 const express = require('express');
 
 // Importiert den selbst erstellten MariaDB-Datenbankpool aus db.js
 const db = require('./db');
 
+// Importiert bcrypt zum sicheren Hashen von Passwörtern
+const bcrypt = require('bcrypt');
+
+// Importiert Middleware zur Überprüfung von Tokens
+const authMiddleware = require('./middleware/authMiddleware');
+
+// Importiert Authentifizierungsrouten (z. B. /login)
+const authRoutes = require('./routes/auth');
+
 // Erstellt eine neue Express-Anwendung
 const app = express();
 
 // Definiert den Port, auf dem der Server Anfragen akzeptieren soll
 const PORT = 3000;
+
+// Middleware, um JSON-Daten im Body automatisch zu erkennen und umzuwandeln
+app.use(express.json());
 
 /**
  * Root-Route (GET /)
@@ -54,28 +68,26 @@ app.get('/db-test', async (req, res) => {
   }
 });
 
-const bcrypt = require('bcrypt'); // Für Passwort-Hashing
-
 /**
  * Route zur Registrierung eines neuen Benutzers
- * Nimmt E-Mail, Passwort und Anzeigename entgegen, hasht das Passwort und speichert alles in der DB.
+ * Erwartet E-Mail, Passwort und Anzeigename, hasht das Passwort und speichert alles in der DB
  * @name POST /register
  * @function
  * @param {import('express').Request} req - HTTP-Anfrageobjekt
  * @param {import('express').Response} res - HTTP-Antwortobjekt
  */
-app.use(express.json()); // Middleware, um JSON-Daten im Body zu parsen
-
 app.post('/register', async (req, res) => {
   try {
+    // Daten aus dem Request-Body extrahieren
     const { email, password, display_name } = req.body;
 
-    // Einfache Validierung
+    // Überprüfung, ob alle Felder ausgefüllt sind
     if (!email || !password || !display_name) {
+      // Antwort mit Fehler, wenn Felder fehlen
       return res.status(400).json({ success: false, error: 'Alle Felder sind erforderlich' });
     }
 
-    // Passwort mit bcrypt hashen (10 Runden Salt)
+    // Passwort mit bcrypt verschlüsseln (10 Salt-Runden)
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Benutzer in die Datenbank einfügen
@@ -85,7 +97,11 @@ app.post('/register', async (req, res) => {
     );
 
     // Erfolgreiche Antwort zurückgeben
-    res.status(201).json({ success: true, message: 'Benutzer registriert', userId: result.insertId });
+    res.status(201).json({
+      success: true,
+      message: 'Benutzer registriert',
+      userId: result.insertId // Gibt die neue Benutzer-ID zurück
+    });
   } catch (error) {
     // Fehlerbehandlung, z. B. bei doppelter E-Mail
     console.error('Registrierungsfehler:', error);
@@ -93,8 +109,29 @@ app.post('/register', async (req, res) => {
   }
 });
 
-const authRoutes = require('./routes/auth'); // Authentifizierungsrouten importieren
-app.use('/', authRoutes); // Routen unter der Basis-URL / verfügbar machen
+// Authentifizierungsrouten einbinden (z. B. /login)
+app.use('/', authRoutes); // Macht alle Routen aus routes/auth.js unter der Basis-URL nutzbar
+
+/**
+ * Geschützte Test-Route (nur mit gültigem Token zugänglich)
+ * Wird nur ausgeführt, wenn ein gültiger Token im Header mitgeschickt wird
+ * @name GET /api/protected
+ * @function
+ * @middleware authMiddleware
+ */
+app.get('/api/protected',
+
+  // Zuerst wird die Token-Middleware aufgerufen
+  authMiddleware,
+
+  // Dann wird die Antwort nur ausgeführt, wenn der Token gültig ist
+  (req, res) => {
+    res.json({
+      success: true,
+      message: `Hallo ${req.user.email}, du hast Zugriff auf geschützte Daten!`
+    });
+  }
+);
 
 /**
  * Startet den Express-Server
