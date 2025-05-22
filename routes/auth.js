@@ -45,12 +45,13 @@ router.post('/login', async (req, res) => {
     }
 
     // Wenn alles passt: Token erzeugen
-    // Der Token enthält die User-ID und E-Mail, wird mit 'geheim' signiert und ist 2h gültig
+    // Der Token enthält die User-ID und E-Mail, wird mit dem Wert aus .env signiert und ist 2h gültig
     const token = jwt.sign(
       { userId: user.id, email: user.email }, // Nutzerdaten im Token
-      'geheim', // Unser noch fester Schlüssel (bald über .env)
-      { expiresIn: '2h' } // Gültigkeit des Tokens
-    );
+      process.env.JWT_SECRET,                // Unser geheimer Schlüssel aus .env
+      { expiresIn: '2h' }                    // Gültigkeit des Tokens
+  );
+
 
     // Token erfolgreich erstellt → als Antwort an den Client schicken
     res.json({ success: true, token });
