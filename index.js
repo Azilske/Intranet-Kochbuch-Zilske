@@ -5,6 +5,10 @@
 
 require('dotenv').config(); // lädt die .env-Datei
 
+// Importiert die Routen für Rezepte (z. B. GET /api/recipes, GET /api/recipes/:id, usw.)
+const recipeRoutes = require("./routes/recipes");
+
+
 // Importiert das Express-Framework zur Erstellung eines Webservers
 const express = require('express');
 
@@ -111,6 +115,15 @@ app.post('/register', async (req, res) => {
 
 // Authentifizierungsrouten einbinden (z. B. /login)
 app.use('/', authRoutes); // Macht alle Routen aus routes/auth.js unter der Basis-URL nutzbar
+
+/**
+ * Einbindung der Rezepte-Routen
+ * Leitet alle Anfragen, die mit /api/recipes beginnen, an routes/recipes.js weiter.
+ * Dort sind z. B. GET /api/recipes oder GET /api/recipes/:id definiert.
+ */
+app.use("/api/recipes", recipeRoutes);
+
+
 
 /**
  * Geschützte Test-Route (nur mit gültigem Token zugänglich)
