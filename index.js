@@ -8,30 +8,34 @@ require('dotenv').config(); // lädt die .env-Datei
 // Importiert die Routen für Rezepte (z. B. GET /api/recipes, GET /api/recipes/:id, usw.)
 const recipeRoutes = require("./routes/recipes");
 
-
 // Importiert das Express-Framework zur Erstellung eines Webservers
 const express = require('express');
 
-// Importiert den selbst erstellten MariaDB-Datenbankpool aus db.js
-const db = require('./db');
+// Importiert den MariaDB-Datenbankpool aus der neuen config/db.js
+const db = require('./config/db');
 
-// Importiert bcrypt zum sicheren Hashen von Passwörtern
+// Importiert bcrypt, um Passwörter sicher zu hashen (z. B. bei Registrierung)
 const bcrypt = require('bcrypt');
 
-// Importiert Middleware zur Überprüfung von Tokens
+// Importiert die selbst geschriebene Middleware zur JWT-Überprüfung
 const authMiddleware = require('./middleware/authMiddleware');
 
-// Importiert Authentifizierungsrouten (z. B. /login)
-const authRoutes = require('./routes/auth');
+// Importiert die Routen für Login und Registrierung aus routes/login.js
+const authRoutes = require('./routes/login');
 
-// Erstellt eine neue Express-Anwendung
+// Importiert Hilfsfunktionen zum Hashen (z. B. Passwort-Tools)
+const hash = require('./utils/hash');
+const hashGen = require('./utils/hash-generator');
+
+// Erstellt eine neue Express-Anwendung (App-Objekt)
 const app = express();
 
-// Definiert den Port, auf dem der Server Anfragen akzeptieren soll
+// Definiert den Port, auf dem der Server später erreichbar ist
 const PORT = 3000;
 
-// Middleware, um JSON-Daten im Body automatisch zu erkennen und umzuwandeln
+// Middleware: Wandelt JSON-Body automatisch in ein JavaScript-Objekt um
 app.use(express.json());
+
 
 /**
  * Root-Route (GET /)
