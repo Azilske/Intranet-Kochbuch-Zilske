@@ -23,10 +23,6 @@ const authMiddleware = require('./middleware/authMiddleware');
 // Importiert die Routen für Login und Registrierung aus routes/login.js
 const authRoutes = require('./routes/login');
 
-// Importiert Hilfsfunktionen zum Hashen (z. B. Passwort-Tools)
-const hash = require('./utils/hash');
-const hashGen = require('./utils/hash-generator');
-
 // Erstellt eine neue Express-Anwendung (App-Objekt)
 const app = express();
 
