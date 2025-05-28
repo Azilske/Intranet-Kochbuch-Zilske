@@ -186,5 +186,38 @@ router.get("/myrecipes", authMiddleware, async (req, res) => {
   }
 });
 
+// GET /api/recipes/:id – Gibt ein einzelnes veröffentlichtes Rezept zurück
+/**
+ * @route   GET /api/recipes/:id
+ * @desc    Holt ein einzelnes veröffentlichtes Rezept anhand der ID
+ * @access  Öffentlich (nur wenn published = 1)
+ */
+router.get("/:id", async (req, res) => {
+  // Die ID des Rezepts aus der URL auslesen
+  const recipeId = req.params.id;
+
+  try {
+    // Nur ein Rezept mit genau dieser ID und published = 1 auswählen
+    const [rows] = await pool.query(
+      "SELECT id, title, ingredients, instructions, image_url FROM recipe WHERE id = ? AND published = 1",
+      [recipeId]
+    );
+
+    // Wenn kein veröffentlichtes Rezept mit dieser ID gefunden wurde
+    if (rows.length === 0) {
+      return res.status(404).json({ error: "Rezept nicht gefunden oder nicht veröffentlicht" });
+    }
+
+    // Erfolgreiche Rückgabe des Rezepts im JSON-Format
+    res.json(rows[0]);
+
+  } catch (error) {
+    // Fehler beim Abrufen des Rezepts
+    console.error("Fehler beim Abrufen des Rezepts:", error);
+    res.status(500).json({ error: "Serverfehler beim Abrufen des Rezepts" });
+  }
+});
+
+
 // Exportiert den Router, damit er in index.js verwendet werden kann
 module.exports = router;
