@@ -1,27 +1,43 @@
-// Importiert die nötigen Komponenten aus React Router
+/**
+ * @file App.jsx
+ * @description Hauptkomponente der React-Anwendung für das Intranet-Kochbuch.
+ *              Enthält die Routing-Logik und bindet Bootstrap-Klassen für Layout und Design ein.
+ */
+
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-
-// Importiert die React-Komponente für die Rezeptliste
 import RecipeList from './components/RecipeList';
-
-// Importiert die React-Komponente für die Detailansicht eines Rezepts
 import RecipeDetail from './components/RecipeDetail';
+import Home from './pages/Home';
 
-// Hauptkomponente der Anwendung
+/**
+ * Hauptkomponente der Anwendung.
+ * Stellt das Layout bereit, initialisiert den Router und rendert die passenden Unterseiten.
+ *
+ * @returns {JSX.Element} Die gerenderte App-Komponente mit Bootstrap-Layout und Routing.
+ */
 function App() {
   return (
-    // Router umgibt die gesamte App und ermöglicht Navigation
-    <Router>
-      <Routes>
-        {/* Route für die Startseite – zeigt alle veröffentlichten Rezepte */}
-        <Route path="/" element={<RecipeList />} />
+    // Bootstrap-Container für zentriertes, responsives Layout
+    <div className="container mt-4">
+      {/* Hauptüberschrift der App im Bootstrap-Stil */}
+      <h1 className="text-center text-primary mb-4">Intranet-Kochbuch</h1>
 
-        {/* Route für die Detailansicht eines einzelnen Rezepts anhand seiner ID */}
-        <Route path="/recipes/:id" element={<RecipeDetail />} />
-      </Routes>
-    </Router>
+      {/* BrowserRouter steuert die Navigation über Pfade */}
+      <Router>
+        <Routes>
+          {/* Route für die Startseite – zeigt Begrüßung und Einstieg */}
+          <Route path="/" element={<Home />} />
+
+          {/* Route für die Rezeptübersicht – zeigt alle veröffentlichten Rezepte */}
+          <Route path="/recipes" element={<RecipeList />} />
+
+          {/* Route für die Detailansicht eines Rezepts anhand seiner ID */}
+          <Route path="/recipes/:id" element={<RecipeDetail />} />
+        </Routes>
+      </Router>
+    </div>
   );
 }
 
-// Exportiert die App-Komponente für die Verwendung in main.jsx
+// Exportiert die Hauptkomponente zur Verwendung in main.jsx
 export default App;
