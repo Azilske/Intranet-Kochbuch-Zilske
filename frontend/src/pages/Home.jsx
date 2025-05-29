@@ -13,25 +13,43 @@ export default function Home() {
       <div className="container">
         <div className="intro">
           <img
-            className="intro-img img-fluid mb-3 mb-lg-0 rounded"
-            src="/assets/img/intro.jpg"
+            className="img-fluid rounded mb-4"
+            src="/images/Bild-Startseite.jpg"
             alt="Startseitenbild"
-          />
-          <div className="intro-text left-0 text-center bg-faded p-5 rounded">
-            <h2 className="section-heading mb-4">
-              <span className="section-heading-upper">Willkommen</span>
-              <span className="section-heading-lower">im Intranet-Kochbuch</span>
-            </h2>
-            <p className="mb-3">
-              Diese Plattform ist für unsere Koch-Azubis und Mitarbeitenden gedacht, um eigene Rezepte zu erstellen,
-              auszutauschen und gemeinsam Neues zu entdecken.
-            </p>
-            <div className="intro-button mx-auto">
-              <a className="btn btn-primary btn-xl" href="/recipes">
-                Zu den Rezepten
-              </a>
-            </div>
-          </div>
+            style={{ maxWidth: '75%', height: 'auto', display: 'block', margin: '0 auto' }}
+         />
+
+
+          <div className="intro-text left-0 text-center bg-faded p-4 rounded" style={{ marginTop: '-20px' }}>
+  <h2 className="text-center" style={{ fontSize: '2rem', color: '#805437' }}>
+    Willkommen bei <strong>Topf&nbsp;Secret</strong>
+  </h2>
+
+  <p className="text-center mx-auto mt-3" style={{ maxWidth: '700px', color: '#805437' }}>
+    Diese Plattform ist exklusiv für unsere Koch-Azubis und Mitarbeitenden gedacht –
+    ein internes <em>Rezeptgeheimnis</em>, das wir miteinander teilen dürfen.
+    Hier kannst du deine Lieblingsrezepte veröffentlichen, bearbeiten, kommentieren oder einfach stöbern.
+    <br />
+    <strong>Lust auf neue Ideen?</strong> Dann klick unten auf den Button und entdecke,
+    was andere schon geteilt haben!
+  </p>
+
+  <div className="text-center mt-4">
+    <a
+      className="btn btn-xl"
+      href="/recipes"
+      style={{
+        backgroundColor: '#f4a261',
+        border: 'none',
+        color: '#805437', // gleiche Schriftfarbe
+        fontWeight: 'bold',
+      }}
+    >
+      Zu den Rezepten
+    </a>
+  </div>
+</div>
+
         </div>
       </div>
     </section>
