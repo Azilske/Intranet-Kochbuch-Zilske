@@ -1,0 +1,10 @@
+/* Globale Stile für die gesamte Anwendung */
+
+body {
+  background-color: #f7f3eb;
+  font-family: "Segoe UI", Helvetica, sans-serif;
+  color: #805437; /* braun weich & freundlich */
+  font-size: 1.2rem;
+  margin: 0;
+  padding: 0;
+}
