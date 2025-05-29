@@ -41,7 +41,7 @@ export default function Home() {
       style={{
         backgroundColor: '#f4a261',
         border: 'none',
-        color: '#805437', // gleiche Schriftfarbe
+        color: '#805437', // braun weich & freundlich
         fontWeight: 'bold',
       }}
     >
