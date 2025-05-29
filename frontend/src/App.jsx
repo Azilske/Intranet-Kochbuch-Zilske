@@ -18,9 +18,17 @@ import Home from './pages/Home';
 function App() {
   return (
     // Bootstrap-Container für zentriertes, responsives Layout
-    <div className="container mt-4">
-      {/* Hauptüberschrift der App im Bootstrap-Stil */}
-      <h1 className="text-center text-primary mb-4">Intranet-Kochbuch</h1>
+<div className="container mt-4">
+  {/* Hauptüberschrift mit individueller Farbgestaltung – Titel in Schwarz & Grau, Untertitel in Grau */}
+  <h1 className="text-center mb-4" style={{ color: '#805437' }}>
+  Topf&nbsp;Secret
+  <small className="d-block" style={{ fontSize: '1rem', color: '#a97458' }}>
+    die Ausbildungsküche
+  </small>
+</h1>
+
+
+
 
       {/* BrowserRouter steuert die Navigation über Pfade */}
       <Router>
