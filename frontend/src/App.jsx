@@ -1,51 +1,83 @@
 /**
  * @file App.jsx
  * @description Hauptkomponente der React-Anwendung für das Intranet-Kochbuch.
- *              Enthält die Routing-Logik und bindet Bootstrap-Klassen für Layout und Design ein.
+ *              Initialisiert den Router, rendert die Seiten und zeigt die Navigation.
  */
 
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import RecipeList from './components/RecipeList';
-import RecipeDetail from './components/RecipeDetail';
-import Home from './pages/Home';
+import RecipeList from './components/RecipeList';           // Komponenten für Rezeptübersicht
+import RecipeDetail from './components/RecipeDetail';       // Komponenten für Detailansicht
+import Home from './pages/Home';                            // Startseite
+import Login from './pages/Login';                          // Login-Seite
+import Register from './pages/register';                    // Registrierungsseite für neue Benutzer:innen
 
 /**
  * Hauptkomponente der Anwendung.
- * Stellt das Layout bereit, initialisiert den Router und rendert die passenden Unterseiten.
+ * Stellt Navigation und Routing bereit.
  *
- * @returns {JSX.Element} Die gerenderte App-Komponente mit Bootstrap-Layout und Routing.
+ * @returns {JSX.Element} Die gerenderte App-Komponente.
  */
 function App() {
   return (
-    // Bootstrap-Container für zentriertes, responsives Layout
-<div className="container mt-4">
-  {/* Hauptüberschrift mit individueller Farbgestaltung – Titel in Schwarz & Grau, Untertitel in Grau */}
-  <h1 className="text-center mb-4" style={{ color: '#805437' }}>
-  Topf&nbsp;Secret
-  <small className="d-block" style={{ fontSize: '1rem', color: '#a97458' }}>
-    die Ausbildungsküche
-  </small>
-</h1>
+    <Router>
+      {/* Navigationsleiste ganz oben – rechtsbündig */}
+      <nav
+        className="navbar navbar-expand-lg"
+        style={{
+          backgroundColor: '#f7f3eb',       // Farblich ans Design angepasst
+          borderBottom: '1px solid #ccc',   // Dezente Trennlinie
+          padding: '0.5rem 1rem',           // Innenabstand
+        }}
+      >
+        <div className="d-flex justify-content-end w-100 px-4">
+          {/* Navigationlinks */}
+          <a
+            className="nav-link me-3"
+            href="/"
+            style={{ color: '#805437', fontSize: '2rem', fontWeight: '500' }}
+          >
+            Startseite
+          </a>
+          <a
+            className="nav-link me-3"
+            href="/recipes"
+            style={{ color: '#805437', fontSize: '2rem', fontWeight: '500' }}
+          >
+            Rezepte
+          </a>
+          <a
+            className="nav-link"
+            href="/login"
+            style={{ color: '#805437', fontSize: '2rem', fontWeight: '500' }}
+          >
+            Login
+          </a>
+        </div>
+      </nav>
 
+      {/* Hauptcontainer für die Inhalte der jeweiligen Seite */}
+      <div className="container mt-4">
 
+        {/* Überschrift – optional, kann entfallen wenn Home-Seite eigenen Titel zeigt */}
+        <h1 className="text-center mb-1" style={{ fontSize: '5rem', color: '#805437' }}>
+          Topf Secret
+          <div style={{ fontSize: '3rem', color: '#805437', marginTop: '0.3rem' }}>
+            Deine Skills. Dein Geschmack!
+          </div>
+        </h1>
 
-
-      {/* BrowserRouter steuert die Navigation über Pfade */}
-      <Router>
+        {/* Routing für die verschiedenen Seiten */}
         <Routes>
-          {/* Route für die Startseite – zeigt Begrüßung und Einstieg */}
-          <Route path="/" element={<Home />} />
-
-          {/* Route für die Rezeptübersicht – zeigt alle veröffentlichten Rezepte */}
-          <Route path="/recipes" element={<RecipeList />} />
-
-          {/* Route für die Detailansicht eines Rezepts anhand seiner ID */}
-          <Route path="/recipes/:id" element={<RecipeDetail />} />
+          <Route path="/" element={<Home />} />                       {/* Startseite */}
+          <Route path="/recipes" element={<RecipeList />} />          {/* Rezeptübersicht */}
+          <Route path="/recipes/:id" element={<RecipeDetail />} />    {/* Einzelrezept */}
+          <Route path="/login" element={<Login />} />                 {/* Login / Registrierung */}
+          <Route path="/register" element={<register />} />           {/* Registrierungsformular für neue Nutzer:innen */}
         </Routes>
-      </Router>
-    </div>
+      </div>
+    </Router>
   );
 }
 
-// Exportiert die Hauptkomponente zur Verwendung in main.jsx
+// Exportiert die Hauptkomponente zur Verwendung im Haupt-Entry (main.jsx)
 export default App;

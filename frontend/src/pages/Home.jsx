@@ -4,54 +4,98 @@ import React from 'react';
 
 /**
  * @file Home.jsx
- * @description Startseite mit Begrüßung und Beschreibung der Kochbuch-Plattform.
- *              Basierend auf dem Business-Casual-Template.
+ * @description Startseite des Intranet-Kochbuchs "Topf Secret" mit Bild, Begrüßungstext,
+ *              Icons zur Navigation (Rezepte / Login), Navbar und Footer. Layout exakt nach Skizze.
  */
+
 export default function Home() {
   return (
-    <section className="page-section clearfix">
-      <div className="container">
-        <div className="intro">
-          <img
-            className="img-fluid rounded mb-4"
-            src="/images/Bild-Startseite.jpg"
-            alt="Startseitenbild"
-            style={{ maxWidth: '75%', height: 'auto', display: 'block', margin: '0 auto' }}
-         />
+    <>
+      <main style={{ backgroundColor: '#f7f3eb', padding: '2rem 0' }}>
+  <div className="container">
 
+    {/* Titelbild */}
+    <div className="text-center mb-5">
+      <img
+        src="/images/Gruppe.png"
+        alt="Startseitenbild"
+        style={{
+          maxWidth: '75%',
+          height: 'auto',
+          borderRadius: '8px',
+        }}
+      />
+    </div>
 
-          <div className="intro-text left-0 text-center bg-faded p-4 rounded" style={{ marginTop: '-20px' }}>
-  <h2 className="text-center" style={{ fontSize: '2rem', color: '#805437' }}>
-    Willkommen bei <strong>Topf&nbsp;Secret</strong>
-  </h2>
-
-  <p className="text-center mx-auto mt-3" style={{ maxWidth: '700px', color: '#805437' }}>
-    Diese Plattform ist exklusiv für unsere Koch-Azubis und Mitarbeitenden gedacht –
-    ein internes <em>Rezeptgeheimnis</em>, das wir miteinander teilen dürfen.
-    Hier kannst du deine Lieblingsrezepte veröffentlichen, bearbeiten, kommentieren oder einfach stöbern.
-    <br />
-    <strong>Lust auf neue Ideen?</strong> Dann klick unten auf den Button und entdecke,
-    was andere schon geteilt haben!
-  </p>
-
-  <div className="text-center mt-4">
-    <a
-      className="btn btn-xl"
-      href="/recipes"
-      style={{
-        backgroundColor: '#f4a261',
-        border: 'none',
-        color: '#805437', // braun weich & freundlich
-        fontWeight: 'bold',
-      }}
+    {/* Icons und Begrüßungstext nebeneinander mit mittiger Ausrichtung */}
+    <div
+      className="d-flex justify-content-center align-items-center"
+      style={{ gap: '4rem', flexWrap: 'nowrap' }}
     >
-      Zu den Rezepten
-    </a>
-  </div>
+      {/* Icon: Rezepte (links vom Text) */}
+      <div className="text-center">
+        <a href="/recipes">
+          <img
+            src="/images/icon-rezepte.png"
+            alt="Rezepte"
+            style={{ width: '320px', height: '320px', objectFit: 'contain' }}
+          />
+        </a>
+        <p style={{ fontWeight: 'bold', color: '#805437' }}>Rezepte</p>
+      </div>
+
+      {/* Begrüßungstext (mittig) */}
+      {/* Begrüßungstext (breiter & mehrspaltig) */}
+<div
+  style={{
+    maxWidth: '1000px',
+    textAlign: 'center',
+    margin: '0 auto',
+    padding: '1rem 2rem',
+    lineHeight: '1.8',
+    fontSize: '1.6rem',
+    color: '#805437'
+  }}
+>
+  <h2 style={{ fontSize: '3rem', color: '#805437', marginBottom: '2rem' }}>
+    Willkommen bei <strong>Topf Secret</strong>
+  </h2>
+  <p style={{ fontSize: '1.6rem', lineHeight: '1.9', color: '#805437', maxWidth: '900px', margin: '0 auto', textAlign: 'center' }}>
+  Du hast ein Rezept kreiert, veredelt, gepimpt oder einfach auf Omas Dachboden gefunden – eins, das so amazing und awesome ist, 
+  dass es der Welt nicht länger vorenthalten werden darf?
+  <br /><br />
+  Dann her damit! Auf <strong>Topf Secret</strong> kannst du deine Elite-Food-Stuff-Ideen teilen, zeigen, was du drauf hast 
+  und dich von anderen inspirieren lassen.
+  <br /><br />
+   Klick einfach auf eins der Icons links oder rechts, um direkt loszulegen!
+</p>
+
+
 </div>
 
-        </div>
+      {/* Icon: Login (rechts vom Text) */}
+      <div className="text-center">
+        <a href="/login">
+          <img
+            src="/images/icon-login.png"
+            alt="Login"
+            style={{ width: '320px', height: '320px', objectFit: 'contain' }}
+          />
+        </a>
+        <p style={{ fontWeight: 'bold', color: '#805437' }}>Registrierung / Login</p>
       </div>
-    </section>
+    </div>
+  </div>
+</main>
+
+
+
+      {/* Footer */}
+      <footer className="text-center py-3" style={{ backgroundColor: '#f7f3eb', borderTop: '1px solid #ccc' }}>
+        <small style={{ color: '#805437' }}>
+          &copy; 2025 Werksküche Berlin
+        </small>
+      </footer>
+    </>
   );
 }
