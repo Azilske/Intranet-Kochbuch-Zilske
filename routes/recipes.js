@@ -10,6 +10,40 @@ const pool = require("../config/db");
 // Importiert die Middleware zum Überprüfen von JWTs
 const authMiddleware = require("../middleware/authMiddleware");
 
+// Importiert das Multer-Modul für Datei-Uploads
+const multer = require("multer");
+const path = require("path");
+
+// Definiert das Speicherziel und den Dateinamen
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    // Zielverzeichnis für Uploads
+    cb(null, path.join(__dirname, "..", "uploads"));
+  },
+  filename: function (req, file, cb) {
+    // Nutzt Datum + Originalname, um doppelte zu vermeiden
+    const uniqueName = Date.now() + "-" + file.originalname;
+    cb(null, uniqueName);
+  }
+});
+
+// Filter: Nur Bilder zulassen (jpeg, png, gif)
+const fileFilter = (req, file, cb) => {
+  const allowedTypes = ["image/jpeg", "image/png", "image/gif"];
+  if (allowedTypes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error("Nur Bildformate erlaubt (jpg, png, gif)"), false);
+  }
+};
+
+// Multer-Middleware konfigurieren
+const upload = multer({
+  storage: storage,
+  fileFilter: fileFilter,
+  limits: { fileSize: 5 * 1024 * 1024 } // Max. 5MB
+});
+
 /**
  * @route   GET /api/recipes
  * @desc    Holt alle veröffentlichten Rezepte aus der Datenbank
@@ -35,15 +69,15 @@ router.get("/", async (req, res) => {
 
 /**
  * @route   POST /api/recipes
- * @desc    Erstellt ein neues Rezept für den eingeloggten Benutzer
+ * @desc    Erstellt ein neues Rezept inkl. Bild (optional)
  * @access  Privat (nur mit gültigem Token)
  */
-router.post("/", authMiddleware, async (req, res) => {
+router.post("/", authMiddleware, upload.single("image"), async (req, res) => {
   try {
-    // Holt die Rezeptdaten aus dem Request-Body
-    const { title, ingredients, instructions, image_url } = req.body;
+    // Holt die Rezeptdaten aus dem Formular
+    const { title, ingredients, instructions } = req.body;
 
-    // Prüft, ob alle Pflichtfelder vorhanden sind
+    // Prüft, ob die Pflichtfelder gesetzt sind
     if (!title || !ingredients || !instructions) {
       return res.status(400).json({
         success: false,
@@ -51,32 +85,35 @@ router.post("/", authMiddleware, async (req, res) => {
       });
     }
 
-    // Liest die Benutzer-ID aus dem JWT (gesetzt von authMiddleware)
+    // Holt die User-ID aus dem Token (gesetzt durch authMiddleware)
     const userId = req.user.userId;
 
-    // Führt das INSERT-Statement aus (published = 0 = Entwurf)
+    // Falls ein Bild hochgeladen wurde, generiere URL
+    const image_url = req.file ? `/uploads/${req.file.filename}` : null;
+
+    // Rezept in die Datenbank einfügen
     const [result] = await pool.query(
       `INSERT INTO recipe (user_id, title, ingredients, instructions, image_url, published)
        VALUES (?, ?, ?, ?, ?, 0)`,
-      [userId, title, ingredients, instructions, image_url || null]
+      [userId, title, ingredients, instructions, image_url]
     );
 
-    // Sendet eine Erfolgsmeldung mit der neuen Rezept-ID
+    // Antwort mit Erfolg und neuer Rezept-ID
     res.status(201).json({
       success: true,
       message: "Rezept erfolgreich gespeichert (noch nicht veröffentlicht)",
-      recipeId: result.insertId
+      recipeId: result.insertId,
     });
   } catch (error) {
-    // Loggt den Fehler
     console.error("Fehler beim Speichern des Rezepts:", error);
-
-    // Antwort mit Fehlerstatus und Nachricht
-    res.status(500).json({ success: false, error: "Rezept konnte nicht gespeichert werden" });
+    res.status(500).json({
+      success: false,
+      error: "Rezept konnte nicht gespeichert werden"
+    });
   }
 });
 
-/**
+   /**
  * @route   PUT /api/recipes/:id
  * @desc    Aktualisiert ein Rezept des eingeloggten Benutzers
  * @access  Privat (nur mit gültigem Token)
@@ -158,7 +195,6 @@ router.delete("/:id", authMiddleware, async (req, res) => {
   }
 });
 
-
 /**
  * @route   GET /api/myrecipes
  * @desc    Holt alle Rezepte der eingeloggten Nutzerin
@@ -186,7 +222,6 @@ router.get("/myrecipes", authMiddleware, async (req, res) => {
   }
 });
 
-// GET /api/recipes/:id – Gibt ein einzelnes veröffentlichtes Rezept zurück
 /**
  * @route   GET /api/recipes/:id
  * @desc    Holt ein einzelnes veröffentlichtes Rezept anhand der ID
@@ -210,7 +245,6 @@ router.get("/:id", async (req, res) => {
 
     // Erfolgreiche Rückgabe des Rezepts im JSON-Format
     res.json(rows[0]);
-
   } catch (error) {
     // Fehler beim Abrufen des Rezepts
     console.error("Fehler beim Abrufen des Rezepts:", error);
@@ -218,6 +252,40 @@ router.get("/:id", async (req, res) => {
   }
 });
 
+/**
+ * @route   POST /api/recipes/upload-image
+ * @desc    Lädt ein Rezeptbild hoch und gibt die URL zurück
+ * @access  Privat (nur mit gültigem Token)
+ */
+router.post("/upload-image", authMiddleware, upload.single("image"), (req, res) => {
+  try {
+    // Wenn keine Datei/Bild enthalten ist
+    if (!req.file) {
+      return res.status(400).json({ success: false, error: "Keine Bilddatei hochgeladen" });
+    }
+
+    // URL zur gespeicherten Datei erstellen
+    const imageUrl = `/uploads/${req.file.filename}`;
+
+    // (Optional) Format des hochgeladenen Bildes zusätzlich prüfen
+    if (req.file && !["image/jpeg", "image/png", "image/gif"].includes(req.file.mimetype)) {
+      return res.status(400).json({
+        success: false,
+        error: "Ungültiges Bildformat. Nur JPG, PNG und GIF sind erlaubt."
+      });
+    }
+
+    // Erfolgsmeldung mit Bild-URL
+    res.status(201).json({
+      success: true,
+      message: "Bild erfolgreich hochgeladen",
+      imageUrl: imageUrl
+    });
+  } catch (error) {
+    console.error("Fehler beim Upload:", error);
+    res.status(500).json({ success: false, error: "Fehler beim Hochladen des Bildes" });
+  }
+});
 
 // Exportiert den Router, damit er in index.js verwendet werden kann
 module.exports = router;
