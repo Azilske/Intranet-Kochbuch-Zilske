@@ -52,34 +52,46 @@ export default function Home() {
               <p style={{ fontWeight: 'bold', color: '#805437' }}>Rezepte</p>
             </div>
 
-            {/* Begrüßungstext in der Mitte */}
-            <div
-              style={{
-                maxWidth: '1000px',
-                textAlign: 'center',
-                margin: '0 auto',
-                padding: '1rem 2rem',
-                lineHeight: '1.8',
-                fontSize: '1.6rem',
-                color: '#805437'
-              }}
-            >
-              <p style={{
-                fontSize: '1.6rem',
-                lineHeight: '1.9',
-                maxWidth: '900px',
-                margin: '0 auto',
-                textAlign: 'center'
-              }}>
-                Du hast ein Rezept kreiert, veredelt, gepimpt oder einfach auf Omas Dachboden gefunden – eins, das so amazing und awesome ist, 
-                dass es der Welt nicht länger vorenthalten werden darf?
-                <br /><br />
-                Dann her damit! Auf <strong>Topf Secret</strong> kannst du deine Elite-Food-Stuff-Ideen teilen, zeigen, was du drauf hast 
-                und dich von anderen inspirieren lassen.
-                <br /><br />
-                Klick einfach auf eins der Icons links oder rechts, um direkt loszulegen!
-              </p>
-            </div>
+              {/* Begrüßungs-Überschrift + Text in der Mitte */}
+  <div
+    style={{
+      maxWidth: '1000px',
+      textAlign: 'center',
+      margin: '0 auto',
+      padding: '1rem 2rem',
+      lineHeight: '1.8',
+      fontSize: '1.6rem',
+      color: '#805437'
+    }}
+  >
+          {/* Zweite Überschrift */}
+          <h2 style={{
+            fontSize: '2.8rem',
+            fontWeight: 'bold',
+            marginBottom: '1.5rem',
+            color: '#805437'
+          }}>
+            Willkommen bei <span style={{ fontWeight: '900' }}>Topf Secret</span>
+          </h2>
+
+          {/* Begrüßungstext */}
+          <p style={{
+            fontSize: '1,9rem',
+            lineHeight: '1.9',
+            maxWidth: '900px',
+            margin: '0 auto',
+            textAlign: 'center'
+          }}>
+            Du hast ein Rezept kreiert, veredelt, gepimpt oder einfach auf Omas Dachboden gefunden – eins, das so amazing und awesome ist, 
+            dass es der Welt nicht länger vorenthalten werden darf?
+            <br /><br />
+            Dann her damit! Auf <strong>Topf Secret</strong> kannst du deine Elite-Food-Stuff-Ideen teilen, zeigen, was du drauf hast 
+            und dich von anderen inspirieren lassen.
+            <br /><br />
+            Klick einfach auf eins der Icons links oder rechts, um direkt loszulegen!
+          </p>
+        </div>
+
 
             {/* Link zur Login-Seite */}
             <div className="text-center">
