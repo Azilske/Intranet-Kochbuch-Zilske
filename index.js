@@ -3,153 +3,149 @@
  * @module index
  */
 
-require('dotenv').config(); // lädt die .env-Datei
+require('dotenv').config(); // Lädt Umgebungsvariablen aus der .env-Datei
 
-// Importiert die Routen für Rezepte (z. B. GET /api/recipes, GET /api/recipes/:id, usw.)
-const recipeRoutes = require("./routes/recipes");
+// Importiert das CORS-Modul, um Cross-Origin-Anfragen vom Frontend zu erlauben
+const cors = require('cors');
 
 // Importiert das Express-Framework zur Erstellung eines Webservers
 const express = require('express');
 
-// Importiert den MariaDB-Datenbankpool aus der neuen config/db.js
+// Importiert das path-Modul, um Dateipfade zu verarbeiten (z. B. für statische Ordner)
+const path = require('path'); // ← NEU: Wird für den Upload-Ordner benötigt
+
+// Importiert die Routen für Rezepte (z. B. GET /api/recipes, GET /api/recipes/:id, usw.)
+const recipeRoutes = require("./routes/recipes");
+
+// Importiert den MariaDB-Datenbankpool aus config/db.js
 const db = require('./config/db');
 
 // Importiert bcrypt, um Passwörter sicher zu hashen (z. B. bei Registrierung)
 const bcrypt = require('bcrypt');
 
-// Importiert die selbst geschriebene Middleware zur JWT-Überprüfung
+// Importiert die Middleware zur JWT-Überprüfung (Token-Check)
 const authMiddleware = require('./middleware/authMiddleware');
 
-// Importiert die Routen für Login und Registrierung aus routes/login.js
+// Importiert die Routen für Login und Registrierung
 const authRoutes = require('./routes/login');
 
-// Erstellt eine neue Express-Anwendung (App-Objekt)
+// Erstellt eine neue Express-Anwendung
 const app = express();
 
-// Definiert den Port, auf dem der Server später erreichbar ist
-const PORT = 3000;
+// Importiert die Routen für Profile – z. B. Bild-Upload und Benutzerprofil aktualisieren
+const profileRoutes = require('./routes/profile'); 
+
+// Importiert die Routen für die eigenen Rezepte
+const userRecipesRoutes = require('./routes/userRecipes');
+
+
+// Aktiviert CORS für das React-Frontend (Port 5173 über dwg.mshome.net)
+app.use(cors({
+  origin: 'http://dwg.mshome.net:5173', // ← Erlaubt nur mein Vite-Frontend
+  credentials: true                     // ← Lässt auch Cookies oder Tokens durch (für spätere Authentifizierung)
+}));
 
 // Middleware: Wandelt JSON-Body automatisch in ein JavaScript-Objekt um
 app.use(express.json());
 
+/**
+ * Stellt den Ordner 'uploads/' unter der URL '/uploads' öffentlich zur Verfügung,
+ * sodass z. B. Profilbilder über http://dwg.mshome.net:3000/uploads/dateiname.jpg
+ * abrufbar sind.
+ */
+// Macht den Ordner "uploads" öffentlich zugänglich – z. B. für Rezeptbilder unter http://dwg.mshome.net:3000/uploads/dateiname.jpg
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+ 
+
+// Aktiviert die Routen unter /api/user-recipes
+app.use("/api/user-recipes", userRecipesRoutes);
+
+// Definiert den Port, auf dem der Server später erreichbar ist
+const PORT = 3000;
 
 /**
  * Root-Route (GET /)
  * Sendet eine einfache Willkommensnachricht als Antwort.
  * Diese Route ist nützlich als Schnelltest, ob der Server läuft.
- * @name GET /
- * @function
- * @param {import('express').Request} req - HTTP Request Objekt
- * @param {import('express').Response} res - HTTP Response Objekt
  */
 app.get('/', (req, res) => {
-  // Sendet einen einfachen Text als Antwort zurück
   res.send('Hallo Angela, dein Express-Server läuft!');
 });
 
 /**
  * Test-Route für die Datenbankverbindung
- * Führt eine einfache SQL-Anfrage aus, um zu prüfen, ob die Verbindung zur Datenbank funktioniert.
- * Gibt die aktuelle Zeit vom Datenbankserver zurück.
- * @name GET /db-test
- * @function
- * @param {import('express').Request} req - HTTP-Anfrageobjekt
- * @param {import('express').Response} res - HTTP-Antwortobjekt
+ * Führt eine SQL-Abfrage aus, um die aktuelle Zeit vom Datenbankserver zu bekommen
  */
 app.get('/db-test', async (req, res) => {
   try {
-    // Führt eine SQL-Abfrage aus, um die aktuelle Zeit vom Server abzurufen
     const [rows] = await db.query('SELECT NOW() AS time');
-
-    // Gibt die Zeit im JSON-Format an den Client zurück
     res.json({ success: true, serverTime: rows[0].time });
   } catch (error) {
-    // Gibt den Fehler in der Konsole aus
     console.error('Fehler bei DB-Verbindung:', error);
-
-    // Gibt dem Client eine Fehlermeldung zurück
     res.status(500).json({ success: false, error: 'Verbindung fehlgeschlagen' });
   }
 });
 
 /**
  * Route zur Registrierung eines neuen Benutzers
- * Erwartet E-Mail, Passwort und Anzeigename, hasht das Passwort und speichert alles in der DB
- * @name POST /register
- * @function
- * @param {import('express').Request} req - HTTP-Anfrageobjekt
- * @param {import('express').Response} res - HTTP-Antwortobjekt
+ * Erwartet: email, password, display_name
  */
 app.post('/register', async (req, res) => {
   try {
-    // Daten aus dem Request-Body extrahieren
     const { email, password, display_name } = req.body;
 
-    // Überprüfung, ob alle Felder ausgefüllt sind
+    // Prüfung: alle Felder vorhanden?
     if (!email || !password || !display_name) {
-      // Antwort mit Fehler, wenn Felder fehlen
       return res.status(400).json({ success: false, error: 'Alle Felder sind erforderlich' });
     }
 
-    // Passwort mit bcrypt verschlüsseln (10 Salt-Runden)
+    // Passwort hashen mit bcrypt
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Benutzer in die Datenbank einfügen
+    // Eintrag in Datenbank
     const [result] = await db.query(
       'INSERT INTO user (email, password, display_name) VALUES (?, ?, ?)',
       [email, hashedPassword, display_name]
     );
 
-    // Erfolgreiche Antwort zurückgeben
     res.status(201).json({
       success: true,
       message: 'Benutzer registriert',
-      userId: result.insertId // Gibt die neue Benutzer-ID zurück
+      userId: result.insertId
     });
   } catch (error) {
-    // Fehlerbehandlung, z. B. bei doppelter E-Mail
     console.error('Registrierungsfehler:', error);
     res.status(500).json({ success: false, error: 'Registrierung fehlgeschlagen' });
   }
 });
 
-// Authentifizierungsrouten einbinden (z. B. /login)
-app.use('/', authRoutes); // Macht alle Routen aus routes/auth.js unter der Basis-URL nutzbar
+// Authentifizierungsrouten aktivieren (z. B. POST /login)
+app.use('/', authRoutes);
 
 /**
- * Einbindung der Rezepte-Routen
- * Leitet alle Anfragen, die mit /api/recipes beginnen, an routes/recipes.js weiter.
- * Dort sind z. B. GET /api/recipes oder GET /api/recipes/:id definiert.
+ * Rezepte-Routen aktivieren – Weiterleitung zu routes/recipes.js
  */
 app.use("/api/recipes", recipeRoutes);
 
-
-
-/**
- * Geschützte Test-Route (nur mit gültigem Token zugänglich)
- * Wird nur ausgeführt, wenn ein gültiger Token im Header mitgeschickt wird
- * @name GET /api/protected
- * @function
- * @middleware authMiddleware
- */
-app.get('/api/protected',
-
-  // Zuerst wird die Token-Middleware aufgerufen
-  authMiddleware,
-
-  // Dann wird die Antwort nur ausgeführt, wenn der Token gültig ist
-  (req, res) => {
-    res.json({
-      success: true,
-      message: `Hallo ${req.user.email}, du hast Zugriff auf geschützte Daten!`
-    });
-  }
-);
+// Aktiviert die Profilrouten – z. B. für GET /api/profile oder POST /api/profile/upload
+app.use('/api/profile', profileRoutes);
 
 /**
- * Startet den Express-Server
- * Sobald der Server läuft, wird eine Info in der Konsole ausgegeben
+ * Beispiel für geschützte Route (nur mit gültigem Token erreichbar)
+ * Der Token wird durch authMiddleware geprüft
  */
-app.listen(PORT, () => {
-  console.log(`Server läuft auf http://localhost:${PORT}`);
+app.get('/api/protected', authMiddleware, (req, res) => {
+  res.json({
+    success: true,
+    message: `Hallo ${req.user.email}, du hast Zugriff auf geschützte Daten!`
+  });
+});
+
+/**
+ * Startet den Express-Server und macht ihn im gesamten Netzwerk erreichbar,
+ * z. B. unter http://dwg.mshome.net:3000 vom Frontend aus.
+ * Wichtig: '0.0.0.0' erlaubt Verbindungen von außen (nicht nur localhost).
+ */
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server läuft auf http://dwg.mshome.net:${PORT}`);
 });
