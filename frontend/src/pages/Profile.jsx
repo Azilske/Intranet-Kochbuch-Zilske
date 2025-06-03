@@ -1,32 +1,43 @@
 /**
  * @file Profile.jsx
  * @description Profilseite für eingeloggte Benutzer:innen im Intranet-Kochbuch „Topf Secret“.
- *              Zeigt das runde Profilbild, erlaubt Änderungen an E-Mail, Anzeigename, Passwort
- *              und bietet das optisch einheitliche Layout mit Icons & Skyline.
+ *              Zeigt das runde Profilbild (inkl. Upload-Funktion), erlaubt Änderungen an E-Mail,
+ *              Anzeigename, Passwort und bietet das optisch einheitliche Layout mit Icons & Skyline.
  */
 
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+/**
+ * @component Profile
+ * @returns {JSX.Element} Die persönliche Profilseite mit Formular zur Bearbeitung und Bild-Upload
+ */
 export default function Profile() {
-  const navigate = useNavigate(); // Für Weiterleitung, wenn kein Token
+  const navigate = useNavigate(); // Für Weiterleitung bei fehlendem Token
 
-  // Zustand für Profilfelder
+  // Zustand für Profildaten (E-Mail, Anzeigename, Passwort, Bild)
   const [profile, setProfile] = useState({
     email: '',
     displayName: '',
     password: '',
-    profileImage: null,
+    profileImage: null, // ← Dateiobjekt für das ausgewählte Bild
   });
 
-  // Lädt Profildaten nach dem ersten Rendern
+  // Vorschau-URL für das gewählte Bild im Dateieingabefeld
+  const [previewUrl, setPreviewUrl] = useState(null);
+
+  // Zustand für die Upload-Erfolg-/Fehlermeldung
+  const [uploadMessage, setUploadMessage] = useState(null);
+
+  // Beim ersten Laden der Seite: Token prüfen + Daten vom Server holen
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) {
-      navigate('/login'); // Umleitung bei fehlendem Token
+      navigate('/login'); // ← Kein Token → Zurück zum Login
       return;
     }
 
+    // GET /api/profile: Holt E-Mail und Anzeigename
     fetch('http://dwg.mshome.net:3000/api/profile', {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -46,16 +57,69 @@ export default function Profile() {
       .catch((err) => console.error(err.message));
   }, [navigate]);
 
-  // Formularfelder aktualisieren
+  /**
+   * Aktualisiert die Eingabewerte oder Bild-Datei im Profil-Zustand
+   */
   const handleChange = (e) => {
     const { name, value, files } = e.target;
     setProfile((prev) => ({
       ...prev,
-      [name]: files ? files[0] : value,
+      [name]: files ? files[0] : value, // Datei oder normaler Wert
     }));
   };
 
-  // Profildaten speichern
+  /**
+   * Zeigt Bildvorschau nach Dateiauswahl
+   */
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    setProfile((prev) => ({
+      ...prev,
+      profileImage: file, // ← Bild im State speichern
+    }));
+
+    // Vorschau-URL setzen (für <img>)
+    if (file) {
+      setPreviewUrl(URL.createObjectURL(file));
+    }
+  };
+
+  /**
+   * POST /api/profile/upload: Sendet das Bild an den Server
+   */
+  const handleUpload = async () => {
+    if (!profile.profileImage) return;
+
+    const formData = new FormData(); // ← Bild muss als FormData gesendet werden
+    formData.append('profileImage', profile.profileImage);
+
+    try {
+      const res = await fetch('http://dwg.mshome.net:3000/api/profile/upload', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`, // Nur Token, kein Content-Type!
+        },
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        setUploadMessage('✅ Bild erfolgreich hochgeladen!');
+        // Optional: Vom Server zurückgegebenen Pfad speichern
+        // setPreviewUrl(data.imagePath);
+      } else {
+        setUploadMessage('⚠️ Fehler beim Hochladen.');
+      }
+    } catch (err) {
+      console.error(err);
+      setUploadMessage('❌ Serverfehler beim Hochladen.');
+    }
+  };
+
+  /**
+   * PUT /api/profile: Sendet E-Mail, Passwort und Anzeigename an den Server
+   */
   const handleSave = async (e) => {
     e.preventDefault();
     const token = localStorage.getItem('token');
@@ -79,7 +143,7 @@ export default function Profile() {
 
       if (!res.ok) throw new Error('Fehler beim Speichern des Profils');
       alert('Profil erfolgreich gespeichert!');
-      setProfile((prev) => ({ ...prev, password: '' }));
+      setProfile((prev) => ({ ...prev, password: '' })); // Passwort leeren nach Speichern
     } catch (err) {
       console.error(err.message);
     }
@@ -87,12 +151,12 @@ export default function Profile() {
 
   return (
     <>
-      {/* Hauptbereich */}
+      {/* Hauptbereich der Profilseite */}
       <main style={{ backgroundColor: '#f7f3eb', padding: '2rem 0' }}>
         <div className="container">
-          {/* Icons links und rechts */}
+          {/* Flex-Container mit zwei Icons und Formular */}
           <div className="d-flex justify-content-center align-items-start flex-wrap gap-5 mb-5">
-            {/* Icon Startseite */}
+            {/* Icon: Startseite */}
             <div className="text-center" style={{ flex: '1' }}>
               <a href="/">
                 <img
@@ -106,7 +170,7 @@ export default function Profile() {
               </p>
             </div>
 
-            {/* Formularbereich */}
+            {/* Formularbereich – Profilbild & Angaben */}
             <div
               style={{
                 maxWidth: '650px',
@@ -118,27 +182,55 @@ export default function Profile() {
             >
               <h2 style={{ fontSize: '2.5rem', marginBottom: '2rem' }}>Mein Profil</h2>
 
-              {/* Profilbild anzeigen */}
-              <img
-                src="/images/Profilbild.jpg"
-                alt="Profilbild"
-                style={{
-                  width: '100px',
-                  height: '100px',
-                  borderRadius: '50%',
-                  objectFit: 'cover',
-                  marginBottom: '1rem',
-                }}
-              />
+              {/* Bildvorschau wenn vorhanden */}
+              {previewUrl && (
+                <img
+                  src={previewUrl}
+                  alt="Profilbild Vorschau"
+                  style={{
+                    width: '100px',
+                    height: '100px',
+                    borderRadius: '50%',
+                    objectFit: 'cover',
+                    marginBottom: '1rem',
+                  }}
+                />
+              )}
 
-              {/* Datei-Upload */}
-              <div style={{ marginBottom: '1.5rem' }}>
-                <input type="file" name="profileImage" accept="image/*" onChange={handleChange} />
+              {/* Datei-Auswahl für Bild */}
+              <div style={{ marginBottom: '1rem' }}>
+                <input
+                  type="file"
+                  name="profileImage"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                />
               </div>
 
-              {/* Formular */}
+              {/* Upload-Button */}
+              <button
+                type="button"
+                onClick={handleUpload}
+                style={{
+                  backgroundColor: '#d3e8cc',
+                  color: '#2c6e49',
+                  padding: '0.7rem 1.5rem',
+                  fontSize: '1.4rem',
+                  borderRadius: '8px',
+                  border: 'none',
+                  marginBottom: '1.5rem',
+                  cursor: 'pointer',
+                }}
+              >
+                Profilbild speichern
+              </button>
+
+              {/* Rückmeldung (Erfolg/Fehler) */}
+              {uploadMessage && <p style={{ fontSize: '1.3rem' }}>{uploadMessage}</p>}
+
+              {/* Formular zur Profilbearbeitung */}
               <form onSubmit={handleSave}>
-                {/* E-Mail */}
+                {/* E-Mail-Adresse */}
                 <div style={{ marginBottom: '1rem', textAlign: 'left' }}>
                   <label htmlFor="email">E-Mail-Adresse</label>
                   <input
@@ -203,7 +295,7 @@ export default function Profile() {
                   />
                 </div>
 
-                {/* Speichern-Button */}
+                {/* Button zum Speichern */}
                 <button
                   type="submit"
                   style={{
@@ -222,7 +314,7 @@ export default function Profile() {
                 </button>
               </form>
 
-              {/* Eigene Rezepte Hinweis */}
+              {/* Hinweis auf zukünftige Rezeptliste */}
               <div style={{ marginTop: '3rem', textAlign: 'left' }}>
                 <h4 style={{ fontSize: '1.6rem', marginBottom: '0.5rem' }}>Meine Rezepte</h4>
                 <p style={{ fontSize: '1.4rem' }}>
@@ -232,7 +324,7 @@ export default function Profile() {
               </div>
             </div>
 
-            {/* Icon Rezepte */}
+            {/* Icon: Rezepte-Seite */}
             <div className="text-center" style={{ flex: '1' }}>
               <a href="/recipes">
                 <img
@@ -245,7 +337,7 @@ export default function Profile() {
             </div>
           </div>
 
-          {/* Skyline-Bild unten */}
+          {/* Dekorative Skyline */}
           <div className="text-center mt-5">
             <img
               src="/images/TopfSecretBerlin2.png"
