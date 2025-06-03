@@ -59,7 +59,7 @@ export default function NavBar() {
         to="/"
         style={{ color: '#805437', textDecoration: 'none', fontSize: '1.6rem' }}
       >
-        🍲 Topf Secret
+         Topf Secret
       </Link>
 
       {/* Rechte Seite: Links je nach Loginstatus */}
@@ -71,6 +71,10 @@ export default function NavBar() {
 
         {isLoggedIn ? (
           <>
+            {/* Neuer Link: Nur sichtbar, wenn eingeloggt */}
+            <Link to="/my-recipes" style={{ color: '#805437', textDecoration: 'none' }}>
+              Meine Rezepte
+            </Link>
             {/* Nur sichtbar, wenn eingeloggt */}
             <Link to="/profile" style={{ color: '#805437', textDecoration: 'none' }}>
               Mein Profil
