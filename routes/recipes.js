@@ -46,26 +46,25 @@ const upload = multer({
 
 /**
  * @route   GET /api/recipes
- * @desc    Holt alle veröffentlichten Rezepte aus der Datenbank
+ * @desc    Holt alle veröffentlichten Rezepte inkl. Anzeigename des Erstellers
  * @access  Öffentlich (kein Login nötig)
  */
 router.get("/", async (req, res) => {
   try {
-    // Fragt alle Rezepte ab, bei denen "published" = 1 ist
     const [rows] = await pool.query(
-      "SELECT id, title, ingredients, instructions, image_url FROM recipe WHERE published = 1"
+      `SELECT recipe.id, recipe.title, recipe.ingredients, recipe.instructions, 
+              recipe.image_url, recipe.published, recipe.user_id, user.display_name
+       FROM recipe
+       JOIN user ON recipe.user_id = user.id
+       WHERE recipe.published = 1`
     );
-
-    // Sendet die gefundenen Rezepte als JSON an den Client
     res.json(rows);
   } catch (error) {
-    // Loggt den Fehler in der Konsole
     console.error("Fehler beim Abrufen der Rezepte:", error);
-
-    // Sendet einen Fehlerstatus und eine Nachricht zurück
     res.status(500).json({ error: "Interner Serverfehler" });
   }
 });
+
 
 /**
  * @route   POST /api/recipes
@@ -74,79 +73,55 @@ router.get("/", async (req, res) => {
  */
 router.post("/", authMiddleware, upload.single("image"), async (req, res) => {
   try {
-    // Holt die Rezeptdaten aus dem Formular
-    const { title, ingredients, instructions } = req.body;
-
-    // Prüft, ob die Pflichtfelder gesetzt sind
+    const { title, ingredients, instructions, published } = req.body;
     if (!title || !ingredients || !instructions) {
       return res.status(400).json({
         success: false,
         error: "Titel, Zutaten und Zubereitung sind erforderlich"
       });
     }
-
-    // Holt die User-ID aus dem Token (gesetzt durch authMiddleware)
-    const userId = req.user.userId;
-
-    // Falls ein Bild hochgeladen wurde, generiere URL
+    const userId = req.user.id;
     const image_url = req.file ? `/uploads/${req.file.filename}` : null;
-
-    // Rezept in die Datenbank einfügen
     const [result] = await pool.query(
-      `INSERT INTO recipe (user_id, title, ingredients, instructions, image_url, published)
-       VALUES (?, ?, ?, ?, ?, 0)`,
-      [userId, title, ingredients, instructions, image_url]
-    );
+    `INSERT INTO recipe (user_id, title, ingredients, instructions, image_url, published)
+    VALUES (?, ?, ?, ?, ?, ?)`,
+    [userId, title, ingredients, instructions, image_url, published]
+);
 
-    // Antwort mit Erfolg und neuer Rezept-ID
     res.status(201).json({
       success: true,
-      message: "Rezept erfolgreich gespeichert (noch nicht veröffentlicht)",
+      message: "Rezept erfolgreich gespeichert und veröffentlicht",
       recipeId: result.insertId,
     });
   } catch (error) {
     console.error("Fehler beim Speichern des Rezepts:", error);
-    res.status(500).json({
-      success: false,
-      error: "Rezept konnte nicht gespeichert werden"
-    });
+    res.status(500).json({ success: false, error: "Rezept konnte nicht gespeichert werden" });
   }
 });
 
-   /**
+/**
  * @route   PUT /api/recipes/:id
  * @desc    Aktualisiert ein Rezept des eingeloggten Benutzers
  * @access  Privat (nur mit gültigem Token)
  */
 router.put("/:id", authMiddleware, async (req, res) => {
   try {
-    // Holt die Rezept-ID aus der URL (z. B. /api/recipes/4)
     const recipeId = req.params.id;
-
-    // Holt die Daten aus dem Body (können geändert werden)
     const { title, ingredients, instructions, image_url, published } = req.body;
-
-    // Holt die Benutzer-ID aus dem JWT
-    const userId = req.user.userId;
-
-    // Prüft, ob das Rezept überhaupt diesem Nutzer gehört
+    const userId = req.user.id;
     const [checkRows] = await pool.query(
       "SELECT id FROM recipe WHERE id = ? AND user_id = ?",
       [recipeId, userId]
     );
-
     if (checkRows.length === 0) {
       return res.status(403).json({ success: false, error: "Kein Zugriff auf dieses Rezept" });
     }
-
-    // Führt das Update durch (nur erlaubte Felder)
     await pool.query(
       `UPDATE recipe 
        SET title = ?, ingredients = ?, instructions = ?, image_url = ?, published = ?
        WHERE id = ?`,
       [title, ingredients, instructions, image_url || null, published || 0, recipeId]
     );
-
     res.json({ success: true, message: "Rezept wurde aktualisiert" });
   } catch (error) {
     console.error("Fehler beim Aktualisieren des Rezepts:", error);
@@ -161,36 +136,19 @@ router.put("/:id", authMiddleware, async (req, res) => {
  */
 router.delete("/:id", authMiddleware, async (req, res) => {
   try {
-    // Holt die Rezept-ID aus der URL (z. B. /api/recipes/7)
     const recipeId = req.params.id;
-
-    // Holt die Benutzer-ID aus dem JWT (gesetzt durch authMiddleware)
-    const userId = req.user.userId;
-
-    // Prüft, ob das Rezept überhaupt diesem Nutzer gehört
+    const userId = req.user.id;
     const [checkRows] = await pool.query(
       "SELECT id FROM recipe WHERE id = ? AND user_id = ?",
       [recipeId, userId]
     );
-
-    // Wenn kein entsprechendes Rezept gefunden wurde → kein Zugriff
     if (checkRows.length === 0) {
-      return res.status(403).json({
-        success: false,
-        error: "Kein Zugriff – dieses Rezept gehört dir nicht"
-      });
+      return res.status(403).json({ success: false, error: "Kein Zugriff – dieses Rezept gehört dir nicht" });
     }
-
-    // Führt die Löschung durch
     await pool.query("DELETE FROM recipe WHERE id = ?", [recipeId]);
-
-    // Erfolgreiche Antwort
     res.json({ success: true, message: "Rezept erfolgreich gelöscht" });
   } catch (error) {
-    // Fehlerausgabe in der Konsole
     console.error("Fehler beim Löschen des Rezepts:", error);
-
-    // Antwort mit Fehler
     res.status(500).json({ success: false, error: "Rezept konnte nicht gelöscht werden" });
   }
 });
@@ -202,52 +160,65 @@ router.delete("/:id", authMiddleware, async (req, res) => {
  */
 router.get("/myrecipes", authMiddleware, async (req, res) => {
   try {
-    // Liest die userId aus dem Token
-    const userId = req.user.userId;
-
-    // Fragt alle Rezepte ab, die zur eingeloggten Benutzerin gehören
+    const userId = req.user.id;
     const [rows] = await pool.query(
       "SELECT id, title, ingredients, instructions, image_url, published FROM recipe WHERE user_id = ?",
       [userId]
     );
-
-    // Gibt die Liste der eigenen Rezepte zurück
     res.json(rows);
   } catch (error) {
-    // Fehlerausgabe in der Konsole
     console.error("Fehler beim Abrufen der eigenen Rezepte:", error);
-
-    // Fehlerantwort an den Client
     res.status(500).json({ error: "Rezepte konnten nicht geladen werden" });
   }
 });
 
 /**
  * @route   GET /api/recipes/:id
- * @desc    Holt ein einzelnes veröffentlichtes Rezept anhand der ID
- * @access  Öffentlich (nur wenn published = 1)
+ * @desc    Holt ein einzelnes Rezept anhand der ID
+ *          → Wenn veröffentlicht, ist kein Login nötig.
+ *          → Wenn nicht veröffentlicht, nur für den Ersteller sichtbar.
+ *          → Zusätzlich wird der display_name (Anzeigename) des Erstellers mitgeladen.
+ * @access  Öffentlich oder privat (abhängig vom Rezeptstatus)
  */
 router.get("/:id", async (req, res) => {
-  // Die ID des Rezepts aus der URL auslesen
   const recipeId = req.params.id;
+  const token = req.headers.authorization?.split(" ")[1];
+  let userId = null;
 
   try {
-    // Nur ein Rezept mit genau dieser ID und published = 1 auswählen
+    // Wenn ein Token vorhanden ist, verifiziere es und extrahiere die User-ID
+    if (token) {
+      const jwt = require("jsonwebtoken");
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      userId = decoded.id;
+    }
+
+    // Datenbankabfrage: Rezept inklusive Anzeigename (display_name) des Erstellers
     const [rows] = await pool.query(
-      "SELECT id, title, ingredients, instructions, image_url FROM recipe WHERE id = ? AND published = 1",
+      `SELECT recipe.id, recipe.title, recipe.ingredients, recipe.instructions, 
+              recipe.image_url, recipe.published, recipe.user_id, user.display_name 
+       FROM recipe
+       JOIN user ON recipe.user_id = user.id
+       WHERE recipe.id = ?`,
       [recipeId]
     );
 
-    // Wenn kein veröffentlichtes Rezept mit dieser ID gefunden wurde
+    // Wenn kein Rezept gefunden wurde → 404
     if (rows.length === 0) {
-      return res.status(404).json({ error: "Rezept nicht gefunden oder nicht veröffentlicht" });
+      return res.status(404).json({ error: "Rezept nicht gefunden" });
     }
 
-    // Erfolgreiche Rückgabe des Rezepts im JSON-Format
-    res.json(rows[0]);
+    const recipe = rows[0];
+
+    // Wenn das Rezept nicht veröffentlicht ist → Zugriff nur für Besitzer:in
+    if (!recipe.published && recipe.user_id !== userId) {
+      return res.status(403).json({ error: "Kein Zugriff auf dieses Rezept" });
+    }
+
+    // Alles passt → Rezept zurückgeben (inkl. display_name)
+    res.json(recipe);
   } catch (error) {
-    // Fehler beim Abrufen des Rezepts
-    console.error("Fehler beim Abrufen des Rezepts:", error);
+    console.error(" Fehler beim Abrufen des Rezepts:", error);
     res.status(500).json({ error: "Serverfehler beim Abrufen des Rezepts" });
   }
 });
@@ -259,15 +230,12 @@ router.get("/:id", async (req, res) => {
  */
 router.post("/upload-image", authMiddleware, upload.single("image"), (req, res) => {
   try {
-    // Wenn keine Datei/Bild enthalten ist
     if (!req.file) {
       return res.status(400).json({ success: false, error: "Keine Bilddatei hochgeladen" });
     }
 
-    // URL zur gespeicherten Datei erstellen
     const imageUrl = `/uploads/${req.file.filename}`;
 
-    // (Optional) Format des hochgeladenen Bildes zusätzlich prüfen
     if (req.file && !["image/jpeg", "image/png", "image/gif"].includes(req.file.mimetype)) {
       return res.status(400).json({
         success: false,
@@ -275,7 +243,6 @@ router.post("/upload-image", authMiddleware, upload.single("image"), (req, res) 
       });
     }
 
-    // Erfolgsmeldung mit Bild-URL
     res.status(201).json({
       success: true,
       message: "Bild erfolgreich hochgeladen",
@@ -287,5 +254,162 @@ router.post("/upload-image", authMiddleware, upload.single("image"), (req, res) 
   }
 });
 
-// Exportiert den Router, damit er in index.js verwendet werden kann
+/**
+ * @route   GET /api/recipes/:id/likes
+ * @desc    Gibt die Like-Anzahl und ob der aktuelle User es geliket hat zurück
+ * @access  Öffentlich (Token optional, aber für "likedByUser" nötig)
+ */
+router.get("/:id/likes", async (req, res) => {
+  const recipeId = req.params.id;
+  const token = req.headers.authorization?.split(" ")[1];
+  let userId = null;
+
+  try {
+    // Token prüfen (optional)
+    if (token) {
+      const jwt = require("jsonwebtoken");
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      userId = decoded.id;
+    }
+
+    // Like-Zahl zählen
+    const [[{ likeCount }]] = await pool.query(
+      "SELECT COUNT(*) AS likeCount FROM likes WHERE recipe_id = ?",
+      [recipeId]
+    );
+
+    // Prüfen, ob aktuelle:r Nutzer:in bereits geliket hat
+    let likedByUser = false;
+    if (userId) {
+      const [liked] = await pool.query(
+        "SELECT id FROM likes WHERE recipe_id = ? AND user_id = ?",
+        [recipeId, userId]
+      );
+      likedByUser = liked.length > 0;
+    }
+
+    res.json({ likeCount, likedByUser });
+  } catch (error) {
+    console.error(" Fehler beim Laden der Likes:", error);
+    res.status(500).json({ error: "Likes konnten nicht geladen werden" });
+  }
+});
+
+
+/**
+ * @route   POST /api/recipes/:id/like
+ * @desc    Liked oder entliked ein Rezept (Toggle)
+ * @access  Privat (nur eingeloggte Nutzer:innen)
+ */
+router.post("/:id/like", authMiddleware, async (req, res) => {
+  const recipeId = req.params.id;
+  const userId = req.user.id;
+
+  try {
+    // Prüfen, ob der Like bereits existiert
+    const [existing] = await pool.query(
+      "SELECT id FROM likes WHERE recipe_id = ? AND user_id = ?",
+      [recipeId, userId]
+    );
+
+    if (existing.length > 0) {
+      // Bereits geliket → Like entfernen
+      await pool.query(
+        "DELETE FROM likes WHERE recipe_id = ? AND user_id = ?",
+        [recipeId, userId]
+      );
+      return res.json({ liked: false });
+    } else {
+      // Noch nicht geliket → Like setzen
+      await pool.query(
+        "INSERT INTO likes (recipe_id, user_id) VALUES (?, ?)",
+        [recipeId, userId]
+      );
+      return res.json({ liked: true });
+    }
+  } catch (error) {
+    console.error(" Fehler beim Liken:", error);
+    res.status(500).json({ error: "Like konnte nicht gesetzt werden" });
+  }
+});
+
+/**
+ * @route   GET /api/recipes/:id/comments
+ * @desc    Holt alle Kommentare zu einem Rezept inklusive Nutzeranzeige
+ * @access  Öffentlich (Login nicht erforderlich)
+ */
+router.get("/:id/comments", async (req, res) => {
+  const recipeId = req.params.id;
+
+  try {
+    // Holt alle Kommentare inkl. Nutzername (display_name) aus der Datenbank
+    const [rows] = await pool.query(
+      `SELECT comments.id, comments.text, comments.created_at, user.display_name 
+       FROM comments 
+       JOIN user ON comments.user_id = user.id 
+       WHERE comments.recipe_id = ? 
+       ORDER BY comments.created_at ASC`,
+      [recipeId]
+    );
+
+    // Gibt die vollständigen Kommentarobjekte aus (inkl. display_name)
+
+    // Antwort an Client senden
+    res.json(rows);
+  } catch (error) {
+    console.error(" Fehler beim Laden der Kommentare:", error);
+    res.status(500).json({
+      error: "Kommentare konnten nicht geladen werden",
+      details: error.message,
+    });
+  }
+});
+
+
+
+/**
+ * @route   POST /api/recipes/:id/comments
+ * @desc    Fügt einen neuen Kommentar zum Rezept hinzu und gibt ihn direkt mit display_name zurück
+ * @access  Privat (nur eingeloggte Nutzer:innen)
+ */
+router.post("/:id/comments", authMiddleware, async (req, res) => {
+  const recipeId = req.params.id;
+  const userId = req.user.id;
+  const { text } = req.body;
+
+  // Validierung: Kein leerer Kommentar erlaubt
+  if (!text || text.trim() === "") {
+    return res.status(400).json({ error: "Kommentar darf nicht leer sein" });
+  }
+
+  try {
+    // Kommentar speichern
+    const [insertResult] = await pool.query(
+      `INSERT INTO comments (recipe_id, user_id, text) 
+       VALUES (?, ?, ?)`,
+      [recipeId, userId, text.trim()]
+    );
+
+    // display_name des aktuellen Users abfragen (für Sofortanzeige im Frontend)
+    const [userRow] = await pool.query(
+      `SELECT display_name FROM user WHERE id = ?`,
+      [userId]
+    );
+
+    res.status(201).json({
+      success: true,
+      message: "Kommentar gespeichert",
+      commentId: insertResult.insertId,
+      display_name: userRow[0]?.display_name || "Unbekannt",
+    });
+  } catch (error) {
+    console.error(" Fehler beim Speichern des Kommentars:", error);
+    res.status(500).json({
+      error: "Kommentar konnte nicht gespeichert werden",
+      details: error.message,
+    });
+  }
+});
+
+
 module.exports = router;
