@@ -20,8 +20,9 @@ import AddRecipe from './pages/AddRecipe';  // Neues Rezept erstellen
 
 // Rezept-Komponenten (Übersicht + Detailansicht)
 import RecipeList from './components/RecipeList';
-import RecipeDetail from './components/RecipeDetail';
-
+import EditRecipe from "./pages/EditRecipe";
+import RecipeDetail from "./pages/RecipeDetail";
+import NewRecipe from "./pages/NewRecipe";
 /**
  * Hauptkomponente der Anwendung.
  * Definiert Routing-Logik mit React Router und bindet NavBar + Footer global ein.
@@ -41,10 +42,7 @@ function App() {
 
         {/* Route für die Übersicht aller veröffentlichten Rezepte */}
         <Route path="/recipes" element={<RecipeList />} />
-
-        {/* Route für die Detailansicht eines Rezepts (z. B. /recipes/5) */}
-        <Route path="/recipes/:id" element={<RecipeDetail />} />
-
+        
         {/* Route für die Login-Seite */}
         <Route path="/login" element={<Login />} />
 
@@ -55,10 +53,20 @@ function App() {
         <Route path="/profile" element={<Profile />} />
 
         {/* Route für die eigene Rezeptübersicht (nur meine Rezepte) */}
-        <Route path="/myrecipes" element={<MyRecipes />} />
+        <Route path="/my-recipes" element={<MyRecipes />} />
 
         {/* Route zur Seite, auf der ich ein neues Rezept erstellen kann */}
         <Route path="/add-recipe" element={<AddRecipe />} />
+
+        {/* Route zur Seite, auf der ich ein vorhandenes Rezept bearbeiten kann */}
+        <Route path="/edit-recipe/:id" element={<EditRecipe />} />
+
+        {/* Route zur Detailansicht eines veröffentlichten Rezepts */}
+        <Route path="/recipes/:id" element={<RecipeDetail />} />
+
+        {/* Route zur Seite, auf der ich ein neues Rezept mit Bild hochladen kann */}
+        <Route path="/new-recipe" element={<NewRecipe />} />
+
       </Routes>
 
       {/* Footer unten – auf allen Seiten sichtbar */}
