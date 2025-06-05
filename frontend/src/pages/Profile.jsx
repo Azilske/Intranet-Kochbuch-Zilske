@@ -29,33 +29,57 @@ export default function Profile() {
   // Zustand für die Upload-Erfolg-/Fehlermeldung
   const [uploadMessage, setUploadMessage] = useState(null);
 
-  // Beim ersten Laden der Seite: Token prüfen + Daten vom Server holen
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      navigate('/login'); // ← Kein Token → Zurück zum Login
-      return;
-    }
+ /**
+ * useEffect-Hook: Wird beim ersten Laden der Seite ausgeführt.
+ * Prüft auf JWT-Token. Wenn vorhanden, holt er Profildaten vom Server (E-Mail, Anzeigename, Bildpfad).
+ * Erkennt automatisch das Profilbild aus der Datenbank und setzt eine Vorschau-URL mit Port 3000.
+ * Debug-Ausgaben in der Konsole helfen bei der Fehlersuche (werden später entfernt).
+ */
+useEffect(() => {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    console.warn('⚠️ Kein Token gefunden – leite zu /login um.');
+    navigate('/login');
+    return;
+  }
 
-    // GET /api/profile: Holt E-Mail und Anzeigename
-    fetch('http://dwg.mshome.net:3000/api/profile', {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+  // Feste Backend-URL mit Port 3000 (nicht Port 5173!)
+  const backendBaseUrl = 'http://dwg.mshome.net:3000';
+
+  // GET /api/profile → holt Profildaten vom Server
+  fetch(`${backendBaseUrl}/api/profile`, {
+    headers: {
+      Authorization: `Bearer ${token}`, // Token wird zur Authentifizierung mitgeschickt
+    },
+  })
+    .then((res) => {
+      if (!res.ok) throw new Error('Profil konnte nicht geladen werden');
+      return res.json();
     })
-      .then((res) => {
-        if (!res.ok) throw new Error('Profil konnte nicht geladen werden');
-        return res.json();
-      })
-      .then((data) => {
-        setProfile((prev) => ({
-          ...prev,
-          email: data.email || '',
-          displayName: data.displayName || '',
-        }));
-      })
-      .catch((err) => console.error(err.message));
-  }, [navigate]);
+    .then((data) => {
+      // 💬 Debug: gesamte Antwort in der Konsole anzeigen
+
+      // Profildaten im State setzen
+      setProfile((prev) => ({
+        ...prev,
+        email: data.email || '',
+        displayName: data.displayName || '',
+      }));
+
+      // Bildpfad aus der DB vorhanden? → Vorschau-URL setzen
+      if (data.image) {
+        const fullUrl = `${backendBaseUrl}${data.image}`;
+        setPreviewUrl(fullUrl);
+      } else {
+      }
+    })
+    .catch((err) => {
+      console.error('❌ Fehler beim Laden des Profils:', err);
+    });
+}, [navigate]);
+
+
+
 
   /**
    * Aktualisiert die Eingabewerte oder Bild-Datei im Profil-Zustand
@@ -84,18 +108,26 @@ export default function Profile() {
     }
   };
 
-  /**
-   * POST /api/profile/upload: Sendet das Bild an den Server
+     /**
+   * PUT /api/profile/profile-picture
+   * Lädt das gewählte Profilbild als Datei hoch und speichert den relativen Pfad
+   * dauerhaft in der Datenbank (Spalte: user.image). Bei Erfolg wird die Vorschau aktualisiert.
    */
-  const handleUpload = async () => {
-    if (!profile.profileImage) return;
+  const handleUploadAndSave = async () => {
+    // Kein Bild ausgewählt → Abbruch
+    if (!profile.profileImage) {
+      setUploadMessage('⚠️ Bitte wähle ein Bild aus.');
+      return;
+    }
 
-    const formData = new FormData(); // ← Bild muss als FormData gesendet werden
-    formData.append('profileImage', profile.profileImage);
+    // Bild in FormData-Objekt verpacken
+    const formData = new FormData();
+    formData.append('profileImage', profile.profileImage); // ← Muss mit dem Multer-Feldnamen übereinstimmen
 
     try {
-      const res = await fetch('http://dwg.mshome.net:3000/api/profile/upload', {
-        method: 'POST',
+      // Anfrage an den Server senden (PUT /api/profile/profile-picture)
+      const res = await fetch('http://dwg.mshome.net:3000/api/profile/profile-picture', {
+        method: 'PUT',
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`, // Nur Token, kein Content-Type!
         },
@@ -105,18 +137,19 @@ export default function Profile() {
       const data = await res.json();
 
       if (data.success) {
-        setUploadMessage('✅ Bild erfolgreich hochgeladen!');
-        // Optional: Vom Server zurückgegebenen Pfad speichern
-        // setPreviewUrl(data.imagePath);
+        // Rückmeldung + Vorschau aktualisieren
+        setUploadMessage('✅ Profilbild wurde gespeichert.');
+        setPreviewUrl(`http://dwg.mshome.net:3000${data.imagePath}`); // ← KORREKT: absolute URL setzen
       } else {
-        setUploadMessage('⚠️ Fehler beim Hochladen.');
+        setUploadMessage('⚠️ Fehler beim Speichern.');
       }
     } catch (err) {
       console.error(err);
-      setUploadMessage('❌ Serverfehler beim Hochladen.');
+      setUploadMessage('❌ Serverfehler beim Speichern des Bildes.');
     }
   };
 
+    
   /**
    * PUT /api/profile: Sendet E-Mail, Passwort und Anzeigename an den Server
    */
@@ -210,7 +243,7 @@ export default function Profile() {
               {/* Upload-Button */}
               <button
                 type="button"
-                onClick={handleUpload}
+                onClick={handleUploadAndSave}
                 style={{
                   backgroundColor: '#d3e8cc',
                   color: '#2c6e49',
@@ -314,14 +347,7 @@ export default function Profile() {
                 </button>
               </form>
 
-              {/* Hinweis auf zukünftige Rezeptliste */}
-              <div style={{ marginTop: '3rem', textAlign: 'left' }}>
-                <h4 style={{ fontSize: '1.6rem', marginBottom: '0.5rem' }}>Meine Rezepte</h4>
-                <p style={{ fontSize: '1.4rem' }}>
-                  Hier könnten deine eigenen Rezepte erscheinen <br />
-                  (Backend-Anbindung folgt).
-                </p>
-              </div>
+              
             </div>
 
             {/* Icon: Rezepte-Seite */}
