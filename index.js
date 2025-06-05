@@ -31,22 +31,11 @@ const authRoutes = require('./routes/login');
 
 // Erstellt eine neue Express-Anwendung
 const app = express();
+// Middleware zur Protokollierung aller eingehenden Anfragen
+app.use((req, res, next) => {
+  next();
+});
 
-// Importiert die Routen für Profile – z. B. Bild-Upload und Benutzerprofil aktualisieren
-const profileRoutes = require('./routes/profile'); 
-
-// Importiert die Routen für die eigenen Rezepte
-const userRecipesRoutes = require('./routes/userRecipes');
-
-
-// Aktiviert CORS für das React-Frontend (Port 5173 über dwg.mshome.net)
-app.use(cors({
-  origin: 'http://dwg.mshome.net:5173', // ← Erlaubt nur mein Vite-Frontend
-  credentials: true                     // ← Lässt auch Cookies oder Tokens durch (für spätere Authentifizierung)
-}));
-
-// Middleware: Wandelt JSON-Body automatisch in ein JavaScript-Objekt um
-app.use(express.json());
 
 /**
  * Stellt den Ordner 'uploads/' unter der URL '/uploads' öffentlich zur Verfügung,
@@ -55,7 +44,35 @@ app.use(express.json());
  */
 // Macht den Ordner "uploads" öffentlich zugänglich – z. B. für Rezeptbilder unter http://dwg.mshome.net:3000/uploads/dateiname.jpg
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
- 
+
+// Importiert die Routen für Profile – z. B. Bild-Upload und Benutzerprofil aktualisieren
+const profileRoutes = require('./routes/profile'); 
+
+// Importiert die Routen für die eigenen Rezepte
+const userRecipesRoutes = require('./routes/userRecipes');
+
+
+/**
+ * Aktiviert CORS (Cross-Origin Resource Sharing) für das React-Frontend auf Port 5173.
+ * Wichtig für alle API-Aufrufe vom Frontend zum Backend, da Browser ansonsten aus
+ * Sicherheitsgründen blockieren würden.
+ *
+ * Diese Konfiguration erlaubt:
+ * – Zugriff vom Host http://dwg.mshome.net:5173
+ * – HTTP-Methoden: GET, POST, PUT, DELETE, OPTIONS
+ * – Spezielle Header wie "Content-Type" und "Authorization" (z. B. für JSON und Token)
+ * – Cookies bzw. Tokens via "credentials: true"
+ */
+app.use(cors({
+  origin: 'http://dwg.mshome.net:5173',               // Mein Frontend (Vite auf Port 5173)
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Alle HTTP-Methoden, die dein Client verwendet
+  allowedHeaders: ['Content-Type', 'Authorization'],  // Erlaubt Custom-Header für JSON und Token
+  credentials: true                                   // Erlaubt das Senden von Cookies oder JWT im Header
+}));
+
+
+// Middleware: Wandelt JSON-Body automatisch in ein JavaScript-Objekt um
+app.use(express.json());
 
 // Aktiviert die Routen unter /api/user-recipes
 app.use("/api/user-recipes", userRecipesRoutes);
@@ -147,5 +164,4 @@ app.get('/api/protected', authMiddleware, (req, res) => {
  * Wichtig: '0.0.0.0' erlaubt Verbindungen von außen (nicht nur localhost).
  */
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server läuft auf http://dwg.mshome.net:${PORT}`);
 });
