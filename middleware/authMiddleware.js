@@ -28,8 +28,8 @@ function authMiddleware(req, res, next) {
     const secret = process.env.JWT_SECRET || 'geheim123'; // fallback nur für dev/test
     const decoded = jwt.verify(token, secret);
 
-    // Den Benutzer aus dem Token speichern, falls später gebraucht
-    req.user = decoded;
+    // Den Benutzer aus dem Token speichern, damit seine ID später verwendet werden kann
+    req.user = { id: decoded.id };
 
     // Weiter zur nächsten Middleware oder Route
     next();
