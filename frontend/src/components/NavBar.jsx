@@ -70,38 +70,47 @@ export default function NavBar() {
         </Link>
 
         {isLoggedIn ? (
-          <>
-            {/* Neuer Link: Nur sichtbar, wenn eingeloggt */}
-            <Link to="/my-recipes" style={{ color: '#805437', textDecoration: 'none' }}>
-              Meine Rezepte
-            </Link>
-            {/* Nur sichtbar, wenn eingeloggt */}
-            <Link to="/profile" style={{ color: '#805437', textDecoration: 'none' }}>
-              Mein Profil
-            </Link>
-            <button
-              onClick={handleLogout}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: '#805437',
-                cursor: 'pointer',
-              }}
-            >
-              Logout
-            </button>
-          </>
-        ) : (
-          <>
-            {/* Nur sichtbar, wenn nicht eingeloggt */}
-            <Link to="/login" style={{ color: '#805437', textDecoration: 'none' }}>
-              Login
-            </Link>
-            <Link to="/register" style={{ color: '#805437', textDecoration: 'none' }}>
-              Registrieren
-            </Link>
-          </>
-        )}
+  <>
+    {/* Link: Eigene Rezepte */}
+    <Link to="/my-recipes" style={{ color: '#805437', textDecoration: 'none' }}>
+      Meine Rezepte
+    </Link>
+
+      {/* Link: Neues Rezept hinzufügen */}
+      <Link to="/new-recipe" style={{ color: '#805437', textDecoration: 'none' }}>
+        Neues Rezept
+      </Link>
+
+        {/* Link: Profilseite */}
+        <Link to="/profile" style={{ color: '#805437', textDecoration: 'none' }}>
+          Mein Profil
+        </Link>
+
+        {/* Logout-Button */}
+        <button
+          onClick={handleLogout}
+          style={{
+            background: 'none',
+            border: 'none',
+            color: '#805437',
+            cursor: 'pointer',
+          }}
+        >
+          Logout
+        </button>
+      </>
+) : (
+  <>
+    {/* Nur sichtbar, wenn nicht eingeloggt */}
+    <Link to="/login" style={{ color: '#805437', textDecoration: 'none' }}>
+      Login
+    </Link>
+    <Link to="/register" style={{ color: '#805437', textDecoration: 'none' }}>
+      Registrieren
+    </Link>
+  </>
+)}
+
       </div>
     </nav>
   );
