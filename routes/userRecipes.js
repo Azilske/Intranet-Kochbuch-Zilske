@@ -6,11 +6,11 @@
 const express = require("express");
 const router = express.Router();
 
-// Importiert die Middleware zur Token-Überprüfung (JWT)
+// Middleware zur Token-Überprüfung (JWT)
 const authMiddleware = require("../middleware/authMiddleware");
 
-// Importiert die DB-Verbindung
-const getDatabaseConnection = require("../config/db");
+// MariaDB-Datenbank-Pool importieren (keine Funktion, sondern Pool-Objekt)
+const pool = require("../config/db");
 
 /**
  * @route   GET /api/user-recipes
@@ -19,19 +19,14 @@ const getDatabaseConnection = require("../config/db");
  */
 router.get("/", authMiddleware, async (req, res) => {
   try {
-    // Holt eine Datenbankverbindung
-    const connection = await getDatabaseConnection();
-
-    // Führt die Abfrage aus: alle Rezepte, die diesem Nutzer gehören
-    const [rows] = await connection.execute(
-      "SELECT id, title, ingredients, instructions, image_url, is_published, created_at FROM recipe WHERE user_id = ?",
+    // Führt die SQL-Abfrage aus
+    const [rows] = await pool.execute(
+      "SELECT id, title, ingredients, instructions, image_url, published FROM recipe WHERE user_id = ?",
       [req.user.id]
-    );
+  );
 
-    // Gibt die Verbindung zurück in den Pool
-    connection.release();
 
-    // Sendet die Daten an das Frontend zurück
+    // Gibt die Rezepte als JSON-Antwort zurück
     res.json(rows);
   } catch (error) {
     console.error("Fehler beim Abrufen eigener Rezepte:", error);
@@ -39,5 +34,5 @@ router.get("/", authMiddleware, async (req, res) => {
   }
 });
 
-// Exportiert den Router
+// Exportiert den Router für die Nutzung in index.js
 module.exports = router;
