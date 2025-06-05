@@ -1,88 +1,82 @@
 /**
  * @file RecipeList.jsx
- * @description Diese Komponente zeigt eine Liste echter Rezepte aus dem Backend im Card-Layout.
- *              Jedes Rezept enthält ein Bild, einen Titel und einen Link zur Detailansicht.
- *              Das Layout ist an das Design der anderen Seiten angepasst (ohne Icons/Deko).
+ * @description Öffentliche Rezeptübersicht: Zeigt alle veröffentlichten Rezepte im Grid.
+ *              Verwendet die RecipeCard-Komponente (ohne Bearbeiten/Löschen).
  */
 
-import { useEffect, useState } from 'react'; // React-Hooks für Zustand und Lifecycle
-import { Link } from 'react-router-dom'; // Für die Navigation zur Detailseite
+import React, { useEffect, useState } from "react";
+import RecipeCard from "./RecipeCard";
 
 /**
- * RecipeList-Komponente – lädt und zeigt alle Rezepte vom Server.
- *
- * @returns {JSX.Element} Die Seite mit einem Grid aus Rezeptkarten.
+ * React-Komponente: RecipeList
+ * Holt alle veröffentlichten Rezepte vom Server und zeigt sie im Grid an.
+ * 
+ * @returns {JSX.Element} Komponente mit Grid-Ansicht veröffentlichter Rezepte
  */
 const RecipeList = () => {
-  // Zustand für die geladenen Rezepte
+  /** @type {[Array<Object>, Function]} */
   const [recipes, setRecipes] = useState([]);
 
-  // Rezepte beim Laden der Komponente vom Server abrufen
+  /** @type {[boolean, Function]} */
+  const [loading, setLoading] = useState(true); // Ladeanzeige aktiv
+
+  // Beim ersten Render: Rezepte vom Server laden
   useEffect(() => {
-    // Fetch-Aufruf an das eigene Backend, um alle veröffentlichten Rezepte zu holen
-    fetch(`${import.meta.env.VITE_API_SERVER_URL}/api/recipes`)
-      .then((res) => {
-        if (!res.ok) {
-          // Wenn die Antwort fehlschlägt, Fehler werfen
-          throw new Error('Fehler beim Laden der Rezepte');
-        }
-        return res.json(); // Antwort als JSON parsen
-      })
+    fetch("http://dwg.mshome.net:3000/api/recipes") // öffentliche API
+      .then((res) => res.json())
       .then((data) => {
-        // Daten in den Zustand übernehmen
-        setRecipes(data);
+        setRecipes(data || []);
+        setLoading(false);
       })
-      .catch((error) => {
-        // Fehlerbehandlung (z. B. wenn der Server nicht erreichbar ist)
-        console.error('Fehler beim Laden der Rezepte:', error.message);
+      .catch((err) => {
+        console.error("❌ Fehler beim Laden der Rezepte:", err);
+        setLoading(false);
       });
-  }, []); // useEffect nur einmal beim ersten Render ausführen
+  }, []);
 
   return (
-    <div className="container mt-4">
-      {/* Überschrift der Seite */}
-      <h2 className="mb-4" style={{ color: '#805437' }}>
-        Rezepte
-      </h2>
+    <div
+      className="recipe-list-page"
+      style={{
+        backgroundColor: "#f7f3eb", // Stil wie bei MyRecipes
+        minHeight: "100vh",
+        padding: "4rem 2rem 6rem 2rem", // oben, rechts, unten, links
+      }}
+    >
+      {/* Überschrift und Wettbewerbsbeschreibung */}
+      <h1 style={{ fontSize: "4rem", marginBottom: "2rem", color: "#6b4226", textAlign: "center" }}>
+        Topf Secret – Eure Rezepte
+      </h1>
+      <p style={{ fontSize: "2rem", marginBottom: "1.5rem", maxWidth: "800px", margin: "0 auto", textAlign: "center" }}>
+        Ob allein, im Team oder als Gruppe – hier könnt ihr eure Kreationen einreichen, das Jahr über Likes sammeln
+        und euch die Chance sichern, live auf der Grünen  Woche mit echten Stars als Gästen zu kochen! Die Beiträge mit den meisten Likes gewinnen:
+        Bühne, Ruhm und vielleicht sogar der Sprung ins nächste Karrierestadium. Zeigt, was in euch steckt – und was in euren Töpfen brodelt!
+      </p>
 
-      {/* Grid-Layout für alle Rezeptkarten */}
-      <div className="row">
-        {recipes.map((recipe) => (
-          <div className="col-md-6 col-lg-4 mb-4" key={recipe.id}>
-            <div className="card h-100 shadow">
-              {/* Rezeptbild (wird über die image_url vom Server geliefert) */}
-              <img
-                src={recipe.image_url}
-                className="card-img-top"
-                alt={recipe.title}
-                style={{ objectFit: 'cover', height: '250px' }}
-              />
+      {/* Ladeanzeige oder Grid */}
+      {loading ? (
+        <p style={{ textAlign: "center" }}>Rezepte werden geladen …</p>
+      ) : recipes.length === 0 ? (
+        <p style={{ textAlign: "center" }}>Noch keine veröffentlichten Rezepte.</p>
+      ) : (
+        <div
+          className="recipe-grid"
+          style={{
+            display: "grid",
+            gap: "2rem",
+            gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", // schon korrekt
+            justifyContent: "center", // NEU: zentriert Karten, wenn nicht ganz voll
+            width: "100%",            // NEU: volle Breite nutzen
+            maxWidth: "1200px",       // NEU: begrenzt auf schöne Desktop-Breite
+            margin: "0 auto",         // NEU: zentriert auf der Seite
+          }}
+        >
 
-              {/* Inhalt der Rezeptkarte */}
-              <div className="card-body d-flex flex-column">
-                {/* Titel des Rezepts */}
-                <h5 className="card-title" style={{ color: '#805437' }}>
-                  {recipe.title}
-                </h5>
-
-                {/* Link zur Detailseite für dieses Rezept */}
-                <Link
-                  to={`/recipes/${recipe.id}`}
-                  className="btn btn-warning mt-auto"
-                  style={{
-                    backgroundColor: '#f4a261',
-                    border: 'none',
-                    color: '#805437',
-                    fontWeight: 'bold',
-                  }}
-                >
-                  Details ansehen
-                </Link>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+          {recipes.map((recipe) => (
+            <RecipeCard key={recipe.id} recipe={recipe} />
+          ))}
+        </div>
+      )}
     </div>
   );
 };
