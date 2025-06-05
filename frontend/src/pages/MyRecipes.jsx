@@ -1,69 +1,160 @@
 /**
- * @file MyRecipes.jsx – Zeigt alle Rezepte an, die ich selbst erstellt habe.
- * Ich kann sie später hier auch bearbeiten oder löschen.
+ * @file MyRecipes.jsx
+ * @description Diese Komponente zeigt alle selbst erstellten Rezepte einer eingeloggten Nutzer:in an.
+ *              Die Rezepte werden vom geschützten Backend-Endpunkt `/api/user-recipes` geladen.
+ *              Jedes Rezept wird als `RecipeCard` dargestellt, bei eigenen Rezepten mit Edit/Delete-Buttons.
  */
 
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import RecipeCard from "../components/RecipeCard";
 
 /**
- * Die Komponente MyRecipes zeigt alle eigenen Rezepte nach dem Login.
- * Sie holt die Daten vom Backend über einen API-Aufruf.
+ * React-Komponente: MyRecipes
+ * Ruft nach dem Login alle Rezepte der eingeloggten Person ab und zeigt sie an.
+ *
+ * @component
+ * @returns {JSX.Element} Eine Seite mit eigenen Rezeptkarten im Grid-Layout
  */
 const MyRecipes = () => {
-  // useState zum Speichern der Rezepte
-  const [recipes, setRecipes] = useState([]);
+  /** @type {[Array<Object>, Function]} */
+  const [recipes, setRecipes] = useState([]); // Zustand für die geladenen Rezepte
 
-  // Navigation z. B. für Weiterleitungen später (bearbeiten etc.)
-  const navigate = useNavigate();
+  /** @type {[boolean, Function]} */
+  const [loading, setLoading] = useState(true); // Zeigt an, ob der Serverantwort noch aussteht
 
-  // Holt die eigenen Rezepte beim Laden der Seite
+  const navigate = useNavigate(); // Ermöglicht Umleitung zur Login-Seite bei fehlendem Token
+
+  // useEffect: wird beim ersten Rendern der Seite einmal ausgeführt
   useEffect(() => {
-    // Holt das Token aus dem LocalStorage
     const token = localStorage.getItem("token");
 
-    // Wenn kein Token vorhanden ist, zur Loginseite umleiten
     if (!token) {
       navigate("/login");
       return;
     }
 
-    // API-Aufruf an /api/recipes/mine (diese Route bauen wir gleich im Backend)
-    fetch("http://dwg.mshome.net:3001/api/recipes/mine", {
+    fetch("http://dwg.mshome.net:3000/api/user-recipes", {
       headers: {
-        Authorization: `Bearer ${token}`, // Auth-Header mit Token
+        Authorization: `Bearer ${token}`,
       },
     })
       .then((res) => res.json())
-      .then((data) => setRecipes(data)) // Rezepte in State speichern
+      .then((data) => {
+        setRecipes(data || []);
+        setLoading(false);
+      })
       .catch((error) => {
-        console.error("Fehler beim Laden der Rezepte:", error);
+        console.error("❌ Fehler beim Laden der Rezepte:", error);
+        setLoading(false);
       });
-  }, []);
+  }, [navigate]);
 
+  /**
+   * Löscht ein Rezept über das Backend und aktualisiert die Anzeige.
+   *
+   * @param {number} id – Die ID des Rezepts, das gelöscht werden soll
+   */
+  const handleDelete = async (id) => {
+    const confirmDelete = window.confirm("Willst du dieses Rezept wirklich löschen?");
+    if (!confirmDelete) return;
+
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("Nicht eingeloggt!");
+      return;
+    }
+
+    try {
+      const res = await fetch(`http://dwg.mshome.net:3000/api/recipes/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (res.ok) {
+        // Erfolgreich gelöscht: Rezeptliste lokal aktualisieren
+        setRecipes((prev) => prev.filter((r) => r.id !== id));
+      } else {
+        console.error("⚠️ Fehler beim Löschen:", await res.text());
+        alert("Löschen fehlgeschlagen.");
+      }
+    } catch (error) {
+      console.error("❌ Netzwerkfehler beim Löschen:", error);
+      alert("Server nicht erreichbar.");
+    }
+  };
+
+  /**
+   * Leitet zur Bearbeiten-Seite weiter, wenn Bearbeiten-Button geklickt wurde
+   *
+   * @param {number} id – Die ID des Rezepts, das bearbeitet werden soll
+   */
+  const handleEdit = (id) => {
+    navigate(`/edit-recipe/${id}`);
+  };
+
+  // JSX-Ausgabe der Komponente
   return (
-    <div className="my-recipes-page" style={{ backgroundColor: "#f7f3eb", minHeight: "100vh", padding: "2rem" }}>
-      <h2 style={{ color: "#805437", textAlign: "center", marginBottom: "2rem" }}>Meine Rezepte</h2>
+    <div
+      className="my-recipes-page"
+      style={{
+        backgroundColor: "#f7f3eb",
+        minHeight: "100vh",
+        padding: "2rem",
+      }}
+    >
+      <h2
+        style={{
+          color: "#805437",
+          textAlign: "center",
+          marginBottom: "2rem",
+        }}
+      >
+        Meine Rezepte
+      </h2>
 
-      {recipes.length === 0 ? (
+        {/* Button zum Erstellen eines neuen Rezepts */}
+    <div style={{ textAlign: "center", marginBottom: "2rem" }}>
+      <button
+        onClick={() => navigate("/new-recipe")}
+        style={{
+          backgroundColor: "#2a9d8f",
+          color: "white",
+          border: "none",
+          padding: "0.6rem 1.2rem",
+          fontSize: "1rem",
+          borderRadius: "8px",
+          cursor: "pointer"
+        }}
+      >
+        ➕ Neues Rezept erstellen
+      </button>
+    </div>
+
+
+      {loading ? (
+        <p style={{ textAlign: "center" }}>Lade deine Rezepte …</p>
+      ) : recipes.length === 0 ? (
         <p style={{ textAlign: "center" }}>Du hast noch keine Rezepte erstellt.</p>
       ) : (
-        <div className="recipe-list" style={{ display: "grid", gap: "2rem", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))" }}>
+        <div
+          className="recipe-list"
+          style={{
+            display: "grid",
+            gap: "2rem",
+            gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+          }}
+        >
           {recipes.map((recipe) => (
-            <div key={recipe.id} className="recipe-card" style={{ backgroundColor: "#fff", borderRadius: "10px", padding: "1rem", boxShadow: "0 0 10px rgba(0,0,0,0.1)" }}>
-              <img src={recipe.image_url} alt={recipe.title} style={{ width: "100%", borderRadius: "10px" }} />
-              <h3 style={{ color: "#805437", marginTop: "1rem" }}>{recipe.title}</h3>
-              <p>{recipe.teaser}</p>
-              {/* Buttons für spätere Bearbeiten- & Löschen-Funktion */}
-              <div style={{ marginTop: "1rem", display: "flex", justifyContent: "space-between" }}>
-                <button onClick={() => navigate(`/edit/${recipe.id}`)} style={{ background: "#805437", color: "#fff", padding: "0.5rem 1rem", borderRadius: "5px" }}>
-                  Bearbeiten
-                </button>
-                <button onClick={() => console.log("Löschen folgt")} style={{ background: "#c0392b", color: "#fff", padding: "0.5rem 1rem", borderRadius: "5px" }}>
-                  Löschen
-                </button>
-              </div>
-            </div>
+            <RecipeCard
+              key={recipe.id}
+              recipe={recipe}
+              isOwnRecipe={true}
+              onDelete={handleDelete}
+              onEdit={handleEdit}
+            />
           ))}
         </div>
       )}
