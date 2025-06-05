@@ -57,7 +57,7 @@ router.post('/login', async (req, res) => {
     // Wenn Passwort korrekt ist, wird ein JWT erzeugt
     const token = jwt.sign(
       {
-        userId: user.id,        // ID des Benutzers im Token speichern
+        id: user.id,        // ID des Benutzers im Token speichern
         email: user.email       // Auch die E-Mail zur Info im Token
       },
       process.env.JWT_SECRET,   // Geheimer Schlüssel aus .env-Datei
