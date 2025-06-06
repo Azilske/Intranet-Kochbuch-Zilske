@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: pages/Login.jsx</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: pages/Login.jsx</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * @file Login.jsx
+ * @description Login-Seite mit fetch-Login und Weiterleitung zum Profil bei Erfolg.
+ *              Zeigt Icons zur Navigation und behandelt Fehler elegant.
+ */
+
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom'; // Für Navigation nach erfolgreichem Login
+
+export default function Login() {
+  // State für Benutzerangaben und Fehlermeldungen
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+
+  const navigate = useNavigate(); // React Router Hook für Weiterleitung
+
+  /**
+   * Senden der Login-Daten an das Backend.
+   * Bei Erfolg: JWT speichern und zur Profilseite weiterleiten.
+   */
+  const handleSubmit = async (e) => {
+    e.preventDefault(); // Verhindert Seitenreload
+
+    try {
+      // POST-Request an die /login-Route der API
+      const response = await fetch(`${import.meta.env.VITE_API_SERVER_URL}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }), // Login-Daten im Body
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Token im localStorage speichern
+        localStorage.setItem('token', data.token);
+        setError(''); // Fehler zurücksetzen
+        navigate('/profile'); // Weiterleitung zur Profilseite
+      } else {
+        // Serverseitige Fehlermeldung anzeigen
+        setError(data.message || 'Login fehlgeschlagen');
+      }
+    } catch (err) {
+      // Netzwerk- oder Serverfehler
+      setError('Serverfehler oder keine Verbindung.');
+    }
+  };
+
+  return (
+    &lt;main style={{ backgroundColor: '#f7f3eb', padding: '2rem 0' }}>
+      &lt;div className="container">
+
+        {/* Layout mit drei Spalten (Icons links/rechts, Formular in der Mitte) */}
+        &lt;div className="d-flex justify-content-center align-items-start flex-wrap gap-5 mb-5">
+          {/* Icon: Startseite (links) */}
+          &lt;div className="text-center" style={{ flex: '1' }}>
+            &lt;a href="/">
+              &lt;img
+                src="/images/icon-home.png"
+                alt="Startseite"
+                style={{ width: '400px', height: '400px', objectFit: 'contain' }}
+              />
+            &lt;/a>
+            &lt;p className="mt-2" style={{ fontWeight: 'bold', color: '#805437' }}>Startseite&lt;/p>
+          &lt;/div>
+
+          {/* Login-Formular (zentral) */}
+          &lt;div
+            style={{
+              maxWidth: '650px',
+              flex: '2',
+              textAlign: 'center',
+              fontSize: '1.6rem',
+              color: '#805437',
+            }}
+          >
+            &lt;h2 style={{ fontSize: '2.5rem', marginBottom: '2rem' }}>
+              Anmelden bei &lt;strong>Topf Secret&lt;/strong>
+            &lt;/h2>
+
+            {/* Fehlermeldung anzeigen (falls vorhanden) */}
+            {error &amp;&amp; (
+              &lt;div style={{ marginBottom: '1rem', color: 'red', fontWeight: 'bold' }}>
+                {error}
+              &lt;/div>
+            )}
+
+            {/* Login-Formular */}
+            &lt;form onSubmit={handleSubmit}>
+              {/* Eingabe: E-Mail */}
+              &lt;div style={{ marginBottom: '1rem', textAlign: 'left' }}>
+                &lt;label htmlFor="email">E-Mail-Adresse&lt;/label>
+                &lt;input
+                  type="email"
+                  id="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="name@example.com"
+                  required
+                  style={{
+                    width: '100%',
+                    padding: '1rem',
+                    fontSize: '1.6rem',
+                    border: '1px solid #ccc',
+                    borderRadius: '5px',
+                    marginTop: '0.5rem',
+                  }}
+                />
+              &lt;/div>
+
+              {/* Eingabe: Passwort */}
+              &lt;div style={{ marginBottom: '2rem', textAlign: 'left' }}>
+                &lt;label htmlFor="password">Passwort&lt;/label>
+                &lt;input
+                  type="password"
+                  id="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="●●●●●●●"
+                  required
+                  style={{
+                    width: '100%',
+                    padding: '1rem',
+                    fontSize: '1.6rem',
+                    border: '1px solid #ccc',
+                    borderRadius: '5px',
+                    marginTop: '0.5rem',
+                  }}
+                />
+              &lt;/div>
+
+              {/* Absenden-Button */}
+              &lt;button
+                type="submit"
+                style={{
+                  width: '100%',
+                  backgroundColor: '#f4a261',
+                  color: '#805437',
+                  fontWeight: 'bold',
+                  padding: '1rem',
+                  fontSize: '1.6rem',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                }}
+              >
+                Login
+              &lt;/button>
+            &lt;/form>
+
+            {/* Hinweis: Link zur Registrierung */}
+            &lt;p className="mt-3">
+              Noch kein Account?{' '}
+              &lt;a href="/register" style={{ color: '#805437' }}>
+                Jetzt registrieren
+              &lt;/a>
+            &lt;/p>
+          &lt;/div>
+
+          {/* Icon: Rezepte (rechts) */}
+          &lt;div className="text-center" style={{ flex: '1' }}>
+            &lt;a href="/recipes">
+              &lt;img
+                src="/images/icon-rezepte.png"
+                alt="Rezepte"
+                style={{ width: '400px', height: '400px', objectFit: 'contain' }}
+              />
+            &lt;/a>
+            &lt;p className="mt-2" style={{ fontWeight: 'bold', color: '#805437' }}>Rezepte&lt;/p>
+          &lt;/div>
+        &lt;/div>
+
+        {/* Dekobild unter dem Formular */}
+        &lt;div className="text-center mt-5">
+          &lt;img
+            src="/images/TopfSecretBerlin1.png"
+            alt="Topf Secret Berlin Skyline"
+            style={{
+              maxWidth: '1200px',
+              height: 'auto',
+              marginLeft: '-100px'
+            }}
+          />
+        &lt;/div>
+      &lt;/div>
+    &lt;/main>
+  );
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#AddRecipe">AddRecipe</a></li><li><a href="global.html#App">App</a></li><li><a href="global.html#MyRecipes">MyRecipes</a></li><li><a href="global.html#RecipeDetail">RecipeDetail</a></li><li><a href="global.html#RecipeList">RecipeList</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.4</a> on Fri Jun 06 2025 07:28:32 GMT+0000 (Koordinierte Weltzeit)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

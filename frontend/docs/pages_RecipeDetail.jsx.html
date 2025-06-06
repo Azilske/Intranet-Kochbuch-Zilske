@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: pages/RecipeDetail.jsx</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: pages/RecipeDetail.jsx</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * @file RecipeDetail.jsx
+ * @description Detailansicht für ein einzelnes Rezept – inkl. Like- &amp; Kommentar-Funktion
+ */
+
+import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+
+/**
+ * Komponente RecipeDetail
+ * Zeigt alle Infos zu einem einzelnen veröffentlichten Rezept.
+ * → Inklusive Like-Zähler, Like-Toggle, Kommentaranzeige &amp; Kommentarformular
+ *
+ * @component
+ * @returns {JSX.Element}
+ */
+export default function RecipeDetail() {
+  const { id } = useParams(); // Holt die Rezept-ID aus der URL
+
+  const [recipe, setRecipe] = useState(null);
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const [likeCount, setLikeCount] = useState(0);
+  const [likedByUser, setLikedByUser] = useState(false);
+
+  const [comments, setComments] = useState([]);
+  const [newComment, setNewComment] = useState("");
+
+  // Rezeptdaten laden
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    fetch(`${import.meta.env.VITE_API_SERVER_URL}/api/recipes/${id}`, {
+      headers: {
+        Authorization: token ? `Bearer ${token}` : undefined,
+      },
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Rezept nicht gefunden oder Zugriff verweigert");
+        return res.json();
+      })
+      .then((data) => {
+        setRecipe(data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error(err);
+        setError("Dieses Rezept konnte nicht geladen werden.");
+        setLoading(false);
+      });
+  }, [id]);
+
+  // Likes laden
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    fetch(`${import.meta.env.VITE_API_SERVER_URL}/api/recipes/${id}/likes`, {
+      headers: {
+        Authorization: token ? `Bearer ${token}` : undefined,
+      },
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        setLikeCount(data.likeCount);
+        setLikedByUser(data.likedByUser);
+      })
+      .catch((err) => console.error("Fehler beim Laden der Likes:", err));
+  }, [id]);
+
+  // Kommentare laden
+  useEffect(() => {
+    fetch(`${import.meta.env.VITE_API_SERVER_URL}/api/recipes/${id}/comments`)
+      .then((res) => res.json())
+      .then((data) => setComments(data))
+      .catch((err) => console.error("Fehler beim Laden der Kommentare:", err));
+  }, [id]);
+
+  // Like-Toggle
+  const handleLikeToggle = () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("Bitte zuerst einloggen, um ein Rezept zu liken.");
+      return;
+    }
+    fetch(`${import.meta.env.VITE_API_SERVER_URL}/api/recipes/${id}/like`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        setLikedByUser(data.liked);
+        setLikeCount((prev) => prev + (data.liked ? 1 : -1));
+      })
+      .catch((err) => console.error("Fehler beim Liken:", err));
+  };
+
+  if (loading) return &lt;p style={{ textAlign: "center" }}>⏳ Lädt …&lt;/p>;
+  if (error) return &lt;p style={{ color: "red", textAlign: "center" }}>{error}&lt;/p>;
+
+  return (
+    &lt;div style={{ padding: "2rem", maxWidth: "800px", margin: "0 auto" }}>
+            &lt;h2
+        style={{
+          color: "#6b4226",
+          fontSize: "2.8rem",
+          fontWeight: "600",
+          marginBottom: "1.5rem",
+          textAlign: "center",
+        }}
+      >
+        {recipe.title}
+      &lt;/h2>
+
+
+      {recipe.image_url &amp;&amp; (
+        &lt;img
+          src={`http://dwg.mshome.net:3000${recipe.image_url}`}
+          alt={recipe.title}
+          style={{
+            width: "100%",
+            maxHeight: "400px",
+            objectFit: "cover",
+            marginBottom: "1rem",
+            borderRadius: "10px",
+          }}
+        />
+      )}
+
+      &lt;div style={{ marginBottom: "1rem" }}>
+        &lt;button
+          onClick={handleLikeToggle}
+          style={{
+            padding: "0.5rem 1rem",
+            backgroundColor: likedByUser ? "#b33c3c" : "#ccc",
+            color: "white",
+            border: "none",
+            borderRadius: "5px",
+            cursor: "pointer",
+            marginRight: "1rem",
+          }}
+        >
+          {likedByUser ? "❤️ Liked" : "🤍 Like"}
+        &lt;/button>
+        &lt;span>{likeCount} Like{likeCount !== 1 &amp;&amp; "s"}&lt;/span>
+      &lt;/div>
+
+      &lt;div style={{ marginBottom: "1rem" }}>
+        &lt;h3 style={{ fontSize: "1.8rem", marginBottom: "0.5rem" }}>Zutaten&lt;/h3>
+        &lt;p style={{ fontSize: "1.4rem", lineHeight: "1.6" }}>{recipe.ingredients}&lt;/p>
+
+      &lt;/div>
+
+      &lt;div style={{ marginBottom: "1rem" }}>
+        &lt;h3 style={{ fontSize: "1.8rem", marginBottom: "0.5rem" }}>Zubereitung&lt;/h3>
+        &lt;p style={{ fontSize: "1.4rem", lineHeight: "1.6" }}>{recipe.instructions}&lt;/p>
+
+      &lt;/div>
+
+      &lt;div style={{ marginTop: "2rem" }}>
+        &lt;h3>Kommentare&lt;/h3>
+
+        {comments.length === 0 ? (
+          &lt;p style={{ fontStyle: "italic" }}>Noch keine Kommentare vorhanden.&lt;/p>
+        ) : (
+          &lt;ul style={{ listStyle: "none", padding: 0 }}>
+            {comments.map((comment) => (
+              &lt;li
+                key={comment.id}
+                style={{
+                  border: "1px solid #ddd",
+                  padding: "1rem",
+                  borderRadius: "8px",
+                  marginBottom: "1rem",
+                  backgroundColor: "#f9f9f9",
+                }}
+              >
+                &lt;strong>{comment.display_name}&lt;/strong> · {" "}
+                &lt;span style={{ color: "#666", fontSize: "0.9rem" }}>
+                  {new Date(comment.created_at).toLocaleString("de-DE")}
+                &lt;/span>
+                &lt;p style={{ marginTop: "0.5rem" }}>{comment.text}&lt;/p>
+              &lt;/li>
+            ))}
+          &lt;/ul>
+        )}
+
+        {localStorage.getItem("token") ? (
+          &lt;form
+            onSubmit={(e) => {
+              e.preventDefault();
+              const token = localStorage.getItem("token");
+              if (!newComment.trim()) return;
+
+              fetch(`${import.meta.env.VITE_API_SERVER_URL}/api/recipes/${id}/comments`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ text: newComment }),
+              })
+                .then((res) => res.json())
+                .then((data) => {
+                  setComments((prev) => [
+                    ...prev,
+                    {
+                      id: data.commentId,
+                      text: newComment,
+                      created_at: new Date().toISOString(),
+                      display_name: "Du",
+                    },
+                  ]);
+                  setNewComment("");
+                })
+                .catch((err) => console.error("Kommentar konnte nicht gespeichert werden:", err));
+            }}
+            style={{ marginTop: "1rem" }}
+          >
+            &lt;textarea
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                placeholder="Kommentar schreiben …"
+                rows="4"
+                style={{
+                  width: "100%",
+                  padding: "1.2rem",
+                  fontSize: "1.4rem",
+                  borderRadius: "8px",
+                  border: "1px solid #ccc",
+                  marginBottom: "1rem",
+                  resize: "vertical",
+                }}
+              >&lt;/textarea>
+
+            &lt;button
+              type="submit"
+               style={{
+                padding: "1rem 2rem",
+                fontSize: "1.3rem",
+                backgroundColor: "#6b4226",
+                color: "white",
+                border: "none",
+                borderRadius: "8px",
+                cursor: "pointer",
+              }}
+
+            >
+              Kommentar absenden
+            &lt;/button>
+          &lt;/form>
+        ) : (
+          &lt;p style={{ fontStyle: "italic" }}>Zum Kommentieren bitte einloggen.&lt;/p>
+        )}
+      &lt;/div>
+    &lt;/div>
+  );
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#AddRecipe">AddRecipe</a></li><li><a href="global.html#App">App</a></li><li><a href="global.html#MyRecipes">MyRecipes</a></li><li><a href="global.html#RecipeDetail">RecipeDetail</a></li><li><a href="global.html#RecipeList">RecipeList</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.4</a> on Fri Jun 06 2025 07:28:32 GMT+0000 (Koordinierte Weltzeit)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

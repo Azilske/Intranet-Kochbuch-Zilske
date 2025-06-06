@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: pages/AddRecipe.jsx</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: pages/AddRecipe.jsx</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * @file AddRecipe.jsx
+ * @description Rezept-Erstellseite – ermöglicht es mir, ein neues Rezept hochzuladen.
+ *              Ich kann Titel, Zutaten, Zubereitung und ein Bild angeben.
+ */
+
+import React, { useState } from "react"; // React und useState-Hook importieren
+import { useNavigate } from "react-router-dom"; // Für Weiterleitungen nach dem Absenden
+
+/**
+ * Komponente zum Erstellen eines neuen Rezepts.
+ *
+ * @returns {JSX.Element} Formularseite zur Rezepterstellung.
+ */
+const AddRecipe = () => {
+  // Eingabefelder als State speichern
+  const [title, setTitle] = useState(""); // Titel des Rezepts
+  const [ingredients, setIngredients] = useState(""); // Zutatenliste
+  const [instructions, setInstructions] = useState(""); // Zubereitung
+  const [image, setImage] = useState(null); // Hochgeladenes Bild
+  const [message, setMessage] = useState(""); // Info-/Fehlermeldung
+
+  const navigate = useNavigate(); // Navigation z. B. zur Rezeptseite nach dem Absenden
+
+  /**
+   * Wird aufgerufen, wenn das Formular abgesendet wird.
+   * Sendet das Rezept per POST an die API.
+   */
+  const handleSubmit = async (e) => {
+    e.preventDefault(); // Standardverhalten des Browsers verhindern
+
+    // Token aus dem LocalStorage lesen (für Authentifizierung)
+    const token = localStorage.getItem("token");
+
+    // Falls kein Token vorhanden, zum Login weiterleiten
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+
+    try {
+      // FormData-Objekt für multipart/form-data erstellen
+      const formData = new FormData();
+      formData.append("title", title); // Titel hinzufügen
+      formData.append("ingredients", ingredients); // Zutaten hinzufügen
+      formData.append("instructions", instructions); // Zubereitung hinzufügen
+      if (image) {
+        formData.append("image", image); // Falls ein Bild vorhanden ist
+      }
+
+      // POST-Anfrage an die API schicken
+      const response = await fetch(`${import.meta.env.VITE_API_SERVER_URL}/api/recipes`, {
+        method: "POST", // Methode: POST
+        headers: {
+          Authorization: `Bearer ${token}`, // Auth-Header mit JWT
+        },
+        body: formData, // Formulardaten als Body
+      });
+
+      // Wenn Antwort nicht ok ist → Fehler werfen
+      if (!response.ok) {
+        throw new Error("Fehler beim Hochladen des Rezepts");
+      }
+
+      // Erfolgsmeldung anzeigen und danach weiterleiten
+      setMessage("Rezept erfolgreich erstellt!");
+      setTimeout(() => navigate("/my-recipes"), 1500); // Nach 1,5s zu "Meine Rezepte"
+    } catch (error) {
+      console.error("Fehler beim Hochladen:", error); // Fehler in Konsole anzeigen
+      setMessage("Es ist ein Fehler aufgetreten."); // Meldung für den Benutzer
+    }
+  };
+
+  return (
+    &lt;div className="container mt-4" style={{ maxWidth: "600px", color: "#805437" }}>
+      {/* Überschrift */}
+      &lt;h2 style={{ marginBottom: "2rem" }}>Neues Rezept erstellen&lt;/h2>
+
+      {/* Feedbackmeldung (Erfolg oder Fehler) */}
+      {message &amp;&amp; (
+        &lt;div style={{ marginBottom: "1rem", color: message.includes("Fehler") ? "red" : "green" }}>
+          {message}
+        &lt;/div>
+      )}
+
+      {/* Das Rezeptformular */}
+      &lt;form onSubmit={handleSubmit}>
+        {/* Eingabefeld: Titel */}
+        &lt;div className="mb-3">
+          &lt;label className="form-label">Titel&lt;/label>
+          &lt;input
+            type="text"
+            className="form-control"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            required
+          />
+        &lt;/div>
+
+        {/* Eingabefeld: Zutaten */}
+        &lt;div className="mb-3">
+          &lt;label className="form-label">Zutaten&lt;/label>
+          &lt;textarea
+            className="form-control"
+            value={ingredients}
+            onChange={(e) => setIngredients(e.target.value)}
+            rows="4"
+            required
+          />
+        &lt;/div>
+
+        {/* Eingabefeld: Zubereitung */}
+        &lt;div className="mb-3">
+          &lt;label className="form-label">Zubereitung&lt;/label>
+          &lt;textarea
+            className="form-control"
+            value={instructions}
+            onChange={(e) => setInstructions(e.target.value)}
+            rows="6"
+            required
+          />
+        &lt;/div>
+
+        {/* Datei-Upload: Bild */}
+        &lt;div className="mb-3">
+          &lt;label className="form-label">Bild&lt;/label>
+          &lt;input
+            type="file"
+            className="form-control"
+            accept="image/*"
+            onChange={(e) => setImage(e.target.files[0])}
+          />
+        &lt;/div>
+
+        {/* Absenden-Button */}
+        &lt;button
+          type="submit"
+          className="btn btn-warning"
+          style={{
+            backgroundColor: "#f4a261",
+            border: "none",
+            fontWeight: "bold",
+          }}
+        >
+          Rezept speichern
+        &lt;/button>
+      &lt;/form>
+    &lt;/div>
+  );
+};
+
+export default AddRecipe;
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#AddRecipe">AddRecipe</a></li><li><a href="global.html#App">App</a></li><li><a href="global.html#MyRecipes">MyRecipes</a></li><li><a href="global.html#RecipeDetail">RecipeDetail</a></li><li><a href="global.html#RecipeList">RecipeList</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.4</a> on Fri Jun 06 2025 07:28:32 GMT+0000 (Koordinierte Weltzeit)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

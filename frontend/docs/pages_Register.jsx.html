@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: pages/Register.jsx</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: pages/Register.jsx</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * @file Register.jsx
+ * @description Seite zur Registrierung im Intranet-Kochbuch „Topf Secret“.
+ *              Optisch identisch zur Login-Seite, mit Icons und stylischem Formular.
+ */
+
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom'; // Für automatische Weiterleitung
+
+export default function Register() {
+  // State-Hooks für die Formularfelder
+  const [email, setEmail] = useState('');
+  const [displayName, setDisplayName] = useState('');
+  const [password, setPassword] = useState('');
+  const [message, setMessage] = useState(''); // Für Erfolg oder Fehlermeldung
+
+  const navigate = useNavigate(); // Für spätere Weiterleitung
+
+  // Formular absenden: POST-Request an das Backend
+  const handleSubmit = async (e) => {
+    e.preventDefault(); // Verhindert Neuladen der Seite
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_SERVER_URL}/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, display_name: displayName, password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Erfolgreiche Registrierung: Anzeige + Felder zurücksetzen
+        setMessage('Registrierung erfolgreich! Weiterleitung zum Login ...');
+        setEmail('');
+        setPassword('');
+        setDisplayName('');
+
+        // Nach 2 Sekunden zur Login-Seite weiterleiten
+        setTimeout(() => navigate('/login'), 2000);
+      } else {
+        // Fehlermeldung vom Backend anzeigen
+        setMessage(data.error || 'Fehler bei der Registrierung.');
+      }
+    } catch (error) {
+      setMessage('Netzwerkfehler oder Server nicht erreichbar.');
+    }
+  };
+
+  return (
+    &lt;>
+      {/* Hauptinhalt der Seite */}
+      &lt;main style={{ backgroundColor: '#f7f3eb', padding: '2rem 0' }}>
+        &lt;div className="container">
+
+          {/* Icons links und rechts um das Formular herum */}
+          &lt;div className="d-flex justify-content-center align-items-start flex-wrap gap-5 mb-5">
+
+            {/* Link: Icon zur Startseite */}
+            &lt;div className="text-center" style={{ flex: '1' }}>
+              &lt;a href="/">
+                &lt;img src="/images/icon-home.png" alt="Startseite" style={{ width: '400px', height: '400px', objectFit: 'contain' }} />
+              &lt;/a>
+              &lt;p className="mt-2" style={{ fontWeight: 'bold', color: '#805437' }}>Startseite&lt;/p>
+            &lt;/div>
+
+            {/* Mittig: Registrierungsformular */}
+            &lt;div
+              style={{
+                maxWidth: '650px',
+                flex: '2',
+                textAlign: 'center',
+                fontSize: '1.6rem',
+                color: '#805437',
+              }}
+            >
+              &lt;h2 style={{ fontSize: '2.5rem', marginBottom: '2rem' }}>
+                Registrieren bei &lt;strong>Topf Secret&lt;/strong>
+              &lt;/h2>
+
+              {/* Feedback-Meldung */}
+              {message &amp;&amp; (
+                &lt;div style={{ marginBottom: '1rem', color: message.includes('erfolgreich') ? 'green' : '#d9534f', fontWeight: 'bold' }}>
+                  {message}
+                &lt;/div>
+              )}
+
+              {/* Formularbereich */}
+              &lt;form onSubmit={handleSubmit}>
+                {/* Eingabe: E-Mail-Adresse */}
+                &lt;div style={{ marginBottom: '1rem', textAlign: 'left' }}>
+                  &lt;label htmlFor="email">E-Mail-Adresse&lt;/label>
+                  &lt;input
+                    type="email"
+                    id="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="name@example.com"
+                    style={{
+                      width: '100%', padding: '1rem', fontSize: '1.6rem',
+                      border: '1px solid #ccc', borderRadius: '5px', marginTop: '0.5rem'
+                    }}
+                    required
+                  />
+                &lt;/div>
+
+                {/* Eingabe: Anzeigename */}
+                &lt;div style={{ marginBottom: '1rem', textAlign: 'left' }}>
+                  &lt;label htmlFor="display_name">Anzeigename&lt;/label>
+                  &lt;input
+                    type="text"
+                    id="display_name"
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    placeholder="z. B. KüchenQueen2025"
+                    style={{
+                      width: '100%', padding: '1rem', fontSize: '1.6rem',
+                      border: '1px solid #ccc', borderRadius: '5px', marginTop: '0.5rem'
+                    }}
+                    required
+                  />
+                &lt;/div>
+
+                {/* Eingabe: Passwort */}
+                &lt;div style={{ marginBottom: '2rem', textAlign: 'left' }}>
+                  &lt;label htmlFor="password">Passwort&lt;/label>
+                  &lt;input
+                    type="password"
+                    id="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="●●●●●●●"
+                    style={{
+                      width: '100%', padding: '1rem', fontSize: '1.6rem',
+                      border: '1px solid #ccc', borderRadius: '5px', marginTop: '0.5rem'
+                    }}
+                    required
+                  />
+                &lt;/div>
+
+                {/* Button zum Absenden */}
+                &lt;button
+                  type="submit"
+                  style={{
+                    width: '100%', backgroundColor: '#f4a261', color: '#805437',
+                    fontWeight: 'bold', padding: '1rem', fontSize: '1.6rem',
+                    border: 'none', borderRadius: '8px', cursor: 'pointer'
+                  }}
+                >
+                  Jetzt registrieren
+                &lt;/button>
+              &lt;/form>
+
+              {/* Hinweis für bestehende Nutzer:innen */}
+              &lt;p className="mt-3">
+                Du hast schon einen Account?{' '}
+                &lt;a href="/login" style={{ color: '#805437' }}>
+                  Zum Login
+                &lt;/a>
+              &lt;/p>
+            &lt;/div>
+
+            {/* Rechts: Icon zu den Rezepten */}
+            &lt;div className="text-center" style={{ flex: '1' }}>
+              &lt;a href="/recipes">
+                &lt;img src="/images/icon-rezepte.png" alt="Rezepte" style={{ width: '400px', height: '400px', objectFit: 'contain' }} />
+              &lt;/a>
+              &lt;p className="mt-2" style={{ fontWeight: 'bold', color: '#805437' }}>Rezepte&lt;/p>
+            &lt;/div>
+          &lt;/div>
+
+          {/* Dekobild unter dem Formular */}
+          &lt;div className="text-center mt-5">
+            &lt;img
+              src="/images/TopfSecretBerlin1.png"
+              alt="Topf Secret Berlin Skyline"
+              style={{ maxWidth: '1200px', height: 'auto', marginLeft: '-100px' }}
+            />
+          &lt;/div>
+        &lt;/div>
+      &lt;/main>
+
+      {/* Footer mit Copyright */}
+      &lt;footer className="text-center py-3" style={{ backgroundColor: '#f7f3eb', borderTop: '1px solid #ccc' }}>
+        &lt;small style={{ color: '#805437' }}>
+          &amp;copy; 2025 Werksküche Berlin
+        &lt;/small>
+      &lt;/footer>
+    &lt;/>
+  );
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#AddRecipe">AddRecipe</a></li><li><a href="global.html#App">App</a></li><li><a href="global.html#MyRecipes">MyRecipes</a></li><li><a href="global.html#RecipeDetail">RecipeDetail</a></li><li><a href="global.html#RecipeList">RecipeList</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.4</a> on Fri Jun 06 2025 07:28:32 GMT+0000 (Koordinierte Weltzeit)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

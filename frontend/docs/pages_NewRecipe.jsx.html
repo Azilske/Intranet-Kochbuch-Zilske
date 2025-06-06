@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: pages/NewRecipe.jsx</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: pages/NewRecipe.jsx</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * @file NewRecipe.jsx
+ * @description Seite zum Erstellen eines neuen Rezepts mit Bild-Upload und Vorschau.
+ *              Nutzt das gleiche Layout wie EditRecipe, aber mit größerem Formular und Bildvorschau.
+ */
+
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+
+/**
+ * Komponente NewRecipe – Seite zum Erstellen eines Rezepts mit Bild.
+ *
+ * @returns {JSX.Element} Formularseite für ein neues Rezept.
+ */
+export default function NewRecipe() {
+  const navigate = useNavigate();
+
+  // Zustand für das gesamte Formular (Textfelder + Bild)
+  const [formData, setFormData] = useState({
+    title: "",
+    ingredients: "",
+    instructions: "",
+    image: null, // Bild-Datei (wird nicht als Text gespeichert, sondern als Datei)
+  });
+
+  // Zustand für die lokale Vorschau des Bilds
+  const [previewUrl, setPreviewUrl] = useState(null);
+
+  // Zustand für potenzielle Fehlermeldungen
+  const [error, setError] = useState(null);
+
+  /**
+   * handleChange – reagiert auf Änderungen in den Textfeldern
+   * Aktualisiert den Formularzustand (z. B. Titel, Zutaten, Zubereitung)
+   */
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  /**
+   * handleImageChange – wird aufgerufen, wenn ein Bild ausgewählt wird.
+   * Speichert die Datei im Zustand und zeigt eine Vorschau.
+   */
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setFormData((prev) => ({ ...prev, image: file }));
+      setPreviewUrl(URL.createObjectURL(file)); // Erzeugt eine temporäre Vorschau-URL im Browser
+    }
+  };
+
+  /**
+   * handleSubmit – sendet das neue Rezept inklusive Bild an den Server
+   * Verwendet FormData für den multipart/form-data Upload
+   */
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    const token = localStorage.getItem("token"); // Token holen für Authentifizierung
+    const form = new FormData();
+
+    // Alle Felder in das FormData-Objekt einfügen
+    form.append("title", formData.title);
+    form.append("ingredients", formData.ingredients);
+    form.append("instructions", formData.instructions);
+    if (formData.image) {
+      form.append("image", formData.image); // Bild hinzufügen, wenn vorhanden
+    }
+    form.append("published", "1"); // Rezept direkt als veröffentlicht speichern (als String für FormData/MySQL)
+
+    try {
+      const res = await fetch("http://dwg.mshome.net:3000/api/recipes", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: form, // wichtig: kein Content-Type setzen, das macht FormData automatisch
+      });
+
+      if (!res.ok) {
+        throw new Error("Rezept konnte nicht erstellt werden");
+      }
+
+      const data = await res.json();
+
+      // Weiterleitung zur Übersichtsseite „Meine Rezepte“
+      navigate("/my-recipes");
+    } catch (err) {
+      console.error(err);
+      setError("Fehler beim Speichern des Rezepts.");
+    }
+  };
+
+  return (
+    &lt;div style={{ padding: "2rem", maxWidth: "800px", margin: "0 auto" }}>
+      &lt;h2 style={{ color: "#805437", marginBottom: "1.5rem" }}>Neues Rezept erstellen&lt;/h2>
+
+      {/* Rezept-Formular */}
+      &lt;form onSubmit={handleSubmit} encType="multipart/form-data">
+        {/* Titel-Eingabe */}
+        &lt;div style={{ marginBottom: "1.2rem" }}>
+          &lt;label htmlFor="title">Titel:&lt;/label>
+          &lt;input
+            type="text"
+            id="title"
+            name="title"
+            required
+            value={formData.title}
+            onChange={handleChange}
+            style={{
+              width: "100%",
+              padding: "1.2rem",
+              fontSize: "1.5rem",
+              borderRadius: "8px",
+              border: "1px solid #ccc",
+            }}
+          />
+
+        &lt;/div>
+
+        {/* Zutaten-Eingabe */}
+        &lt;div style={{ marginBottom: "1.2rem" }}>
+          &lt;label htmlFor="ingredients">Zutaten:&lt;/label>
+          &lt;textarea
+              id="ingredients"
+              name="ingredients"
+              rows={6}
+              required
+              value={formData.ingredients}
+              onChange={handleChange}
+              style={{
+                width: "100%",
+                padding: "1.2rem",
+                fontSize: "1.5rem",
+                borderRadius: "8px",
+                border: "1px solid #ccc",
+                resize: "vertical",
+              }}
+            />
+
+        &lt;/div>
+
+        {/* Zubereitungs-Eingabe */}
+        &lt;div style={{ marginBottom: "1.2rem" }}>
+          &lt;label htmlFor="instructions">Zubereitung:&lt;/label>
+          &lt;textarea
+            id="instructions"
+            name="instructions"
+            rows={8}
+            required
+            value={formData.instructions}
+            onChange={handleChange}
+            style={{
+              width: "100%",
+              padding: "1.2rem",
+              fontSize: "1.5rem",
+              borderRadius: "8px",
+              border: "1px solid #ccc",
+              resize: "vertical",
+            }}
+          />
+
+        &lt;/div>
+
+        {/* Bild-Upload */}
+        &lt;div style={{ marginBottom: "1.2rem" }}>
+          &lt;label htmlFor="image">Rezeptbild hochladen:&lt;/label>
+          &lt;input
+            type="file"
+            id="image"
+            name="image"
+            accept="image/*"
+            onChange={handleImageChange}
+            style={{ display: "block", marginTop: "0.5rem" }}
+          />
+        &lt;/div>
+
+        {/* Bildvorschau */}
+        {previewUrl &amp;&amp; (
+          &lt;div style={{ marginBottom: "1.5rem" }}>
+            &lt;strong>Bildvorschau:&lt;/strong>
+            &lt;img
+              src={previewUrl}
+              alt="Vorschau"
+              style={{
+                marginTop: "0.5rem",
+                maxWidth: "100%",
+                borderRadius: "10px",
+                boxShadow: "0 0 8px rgba(0,0,0,0.2)"
+              }}
+            />
+          &lt;/div>
+        )}
+
+        {/* Fehleranzeige */}
+        {error &amp;&amp; &lt;p style={{ color: "red", marginBottom: "1rem" }}>{error}&lt;/p>}
+
+        {/* Absenden-Button */}
+        &lt;button
+          type="submit"
+          style={{
+            backgroundColor: "#f4a261",
+            border: "none",
+            padding: "0.8rem 1.5rem",
+            fontSize: "1.1rem",
+            borderRadius: "8px",
+            cursor: "pointer"
+          }}
+        >
+          Rezept speichern
+        &lt;/button>
+      &lt;/form>
+    &lt;/div>
+  );
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#AddRecipe">AddRecipe</a></li><li><a href="global.html#App">App</a></li><li><a href="global.html#MyRecipes">MyRecipes</a></li><li><a href="global.html#RecipeDetail">RecipeDetail</a></li><li><a href="global.html#RecipeList">RecipeList</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.4</a> on Fri Jun 06 2025 07:28:32 GMT+0000 (Koordinierte Weltzeit)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

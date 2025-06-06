@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: pages/Home.jsx</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: pages/Home.jsx</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * @file Home.jsx
+ * @description Startseite des Intranet-Kochbuchs "Topf Secret" mit Bild, Begrüßungstext,
+ *              Titelüberschrift, Icons zur Navigation (Rezepte / Login) und globalem Footer.
+ */
+
+import React from 'react';
+import Footer from '../components/Footer'; // Globaler Footer, wird ganz unten eingeblendet
+
+export default function Home() {
+  return (
+    &lt;>
+      {/* Hauptbereich der Startseite */}
+      &lt;main style={{ backgroundColor: '#f7f3eb', padding: '2rem 0' }}>
+        &lt;div className="container text-center">
+
+          {/* Überschrift: Titel und Slogan */}
+          &lt;h1 style={{ color: '#805437', fontSize: '5rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
+            Topf Secret
+          &lt;/h1>
+          &lt;h4 style={{ color: '#805437', fontSize: '3rem', textAlign: 'center', marginBottom: '3rem' }}>
+            Deine Skills. Dein Geschmack!
+          &lt;/h4>
+
+          {/* Titelbild */}
+          &lt;div className="text-center mb-5">
+            &lt;img
+              src="/images/Gruppe.png"
+              alt="Startseitenbild"
+              style={{
+                maxWidth: '75%',
+                height: 'auto',
+                borderRadius: '8px'
+              }}
+            />
+          &lt;/div>
+
+          {/* Iconbereich + Begrüßungstext nebeneinander */}
+          &lt;div
+            className="d-flex justify-content-center align-items-center"
+            style={{ gap: '4rem', flexWrap: 'nowrap' }}
+          >
+            {/* Link zur Rezeptseite */}
+            &lt;div className="text-center">
+              &lt;a href="/recipes">
+                &lt;img
+                  src="/images/icon-rezepte.png"
+                  alt="Rezepte"
+                  style={{ width: '320px', height: '320px', objectFit: 'contain' }}
+                />
+              &lt;/a>
+              &lt;p style={{ fontWeight: 'bold', color: '#805437' }}>Rezepte&lt;/p>
+            &lt;/div>
+
+              {/* Begrüßungs-Überschrift + Text in der Mitte */}
+  &lt;div
+    style={{
+      maxWidth: '1000px',
+      textAlign: 'center',
+      margin: '0 auto',
+      padding: '1rem 2rem',
+      lineHeight: '1.8',
+      fontSize: '1.6rem',
+      color: '#805437'
+    }}
+  >
+          {/* Zweite Überschrift */}
+          &lt;h2 style={{
+            fontSize: '2.8rem',
+            fontWeight: 'bold',
+            marginBottom: '1.5rem',
+            color: '#805437'
+          }}>
+            Willkommen bei &lt;span style={{ fontWeight: '900' }}>Topf Secret&lt;/span>
+          &lt;/h2>
+
+          {/* Begrüßungstext */}
+          &lt;p style={{
+            fontSize: '1,9rem',
+            lineHeight: '1.9',
+            maxWidth: '900px',
+            margin: '0 auto',
+            textAlign: 'center'
+          }}>
+            Du hast ein Rezept kreiert, veredelt, gepimpt oder einfach auf Omas Dachboden gefunden – eins, das so amazing und awesome ist, 
+            dass es der Welt nicht länger vorenthalten werden darf?
+            &lt;br />&lt;br />
+            Dann her damit! Auf &lt;strong>Topf Secret&lt;/strong> kannst du deine Elite-Food-Stuff-Ideen teilen, zeigen, was du drauf hast 
+            und dich von anderen inspirieren lassen.
+            &lt;br />&lt;br />
+            Klick einfach auf eins der Icons links oder rechts, um direkt loszulegen!
+          &lt;/p>
+        &lt;/div>
+
+
+            {/* Link zur Login-Seite */}
+            &lt;div className="text-center">
+              &lt;a href="/login">
+                &lt;img
+                  src="/images/icon-login.png"
+                  alt="Login"
+                  style={{ width: '320px', height: '320px', objectFit: 'contain' }}
+                />
+              &lt;/a>
+              &lt;p style={{ fontWeight: 'bold', color: '#805437' }}>Registrierung / Login&lt;/p>
+            &lt;/div>
+          &lt;/div>
+        &lt;/div>
+      &lt;/main>
+
+      
+    &lt;/>
+  );
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#AddRecipe">AddRecipe</a></li><li><a href="global.html#App">App</a></li><li><a href="global.html#MyRecipes">MyRecipes</a></li><li><a href="global.html#RecipeDetail">RecipeDetail</a></li><li><a href="global.html#RecipeList">RecipeList</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.4</a> on Fri Jun 06 2025 07:28:32 GMT+0000 (Koordinierte Weltzeit)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

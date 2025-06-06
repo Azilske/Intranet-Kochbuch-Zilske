@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: components/RecipeCard.jsx</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: components/RecipeCard.jsx</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * @file RecipeCard.jsx
+ * @description Einzelne Rezeptkarte mit Bild, Titel, Zutaten usw.
+ *              Bei isOwnRecipe=true auch Buttons zum Bearbeiten/Löschen.
+ *              Titel oder Bild sind klickbar und führen zur Detailansicht.
+ */
+
+import React from "react";
+import { useNavigate } from "react-router-dom";
+
+/**
+ * Komponente RecipeCard
+ *
+ * @param {Object} props
+ * @param {Object} props.recipe – Ein Rezeptobjekt vom Server
+ * @param {Function} [props.onEdit] – Optionaler Callback zum Bearbeiten
+ * @param {Function} [props.onDelete] – Optionaler Callback zum Löschen
+ * @param {boolean} [props.isOwnRecipe] – true, wenn es ein eigenes Rezept ist
+ * @returns {JSX.Element}
+ */
+export default function RecipeCard({ recipe, onEdit, onDelete, isOwnRecipe }) {
+  const navigate = useNavigate(); // für Weiterleitung zur Detailansicht
+
+  /**
+   * Handler für Klick auf Titel oder Bild
+   * Leitet zur Detailseite des Rezepts weiter (/recipes/:id)
+   */
+  const handleCardClick = () => {
+    navigate(`/recipes/${recipe.id}`);
+  };
+
+      return (
+      &lt;div
+        style={{
+          width: "100%",             // ✅ passt sich dem Grid an
+          maxWidth: "420px",         // ✅ nicht breiter als 420px
+          boxSizing: "border-box",   // ✅ Padding wird mit eingerechnet
+          backgroundColor: "#fffef8",
+          border: "1px solid #ccc",
+          borderRadius: "12px",
+          overflow: "hidden",
+          boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
+          cursor: "pointer",
+        }}
+      >
+
+      {/* Bild anzeigen, klickbar für Detailansicht */}
+      {recipe.image_url &amp;&amp; (
+        &lt;img
+          src={`http://dwg.mshome.net:3000${recipe.image_url}`}
+          alt={recipe.title}
+          onClick={handleCardClick}
+          style={{
+            width: "100%",
+            height: "500px",
+            objectFit: "cover",
+            backgroundColor: "#eee",
+          }}
+        />
+      )}
+
+      &lt;div style={{ padding: "1.8rem", minHeight: "200px" }}>
+        {/* Titel klickbar */}
+        &lt;h3
+          onClick={handleCardClick}
+          style={{
+            fontSize: "1.6rem",
+            color: "#805437",
+            marginBottom: "0.5rem",
+            cursor: "pointer",
+          }}
+        >
+          {recipe.title}
+        &lt;/h3>
+
+       {/* Anzeigename des Erstellers */}
+        {recipe.display_name &amp;&amp; (
+          &lt;p style={{ fontSize: "1.1rem", color: "#777", marginBottom: "0.8rem" }}>
+            von {recipe.display_name}
+          &lt;/p>
+        )}
+
+
+        {/* Zutaten als Vorschau */}
+        &lt;p style={{ fontSize: "1.3rem", color: "#444" }}>{recipe.ingredients}&lt;/p>
+
+        {/* Buttons nur bei eigenen Rezepten */}
+        {isOwnRecipe &amp;&amp; (
+          &lt;div
+            style={{
+              marginTop: "1.5rem",
+              display: "flex",
+              justifyContent: "space-between",
+            }}
+          >
+            &lt;button
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit?.(recipe.id);
+              }}
+              style={{
+                padding: "0.4rem 1rem",
+                fontSize: "1.2rem",
+                backgroundColor: "#f4a261",
+                border: "none",
+                borderRadius: "6px",
+                cursor: "pointer",
+              }}
+            >
+              Bearbeiten
+            &lt;/button>
+            &lt;button
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete?.(recipe.id);
+              }}
+              style={{
+                padding: "0.4rem 1rem",
+                fontSize: "1.2rem",
+                backgroundColor: "#e76f51",
+                color: "white",
+                border: "none",
+                borderRadius: "6px",
+                cursor: "pointer",
+              }}
+            >
+              Löschen
+            &lt;/button>
+          &lt;/div>
+        )}
+      &lt;/div>
+    &lt;/div>
+  );
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#AddRecipe">AddRecipe</a></li><li><a href="global.html#App">App</a></li><li><a href="global.html#MyRecipes">MyRecipes</a></li><li><a href="global.html#RecipeDetail">RecipeDetail</a></li><li><a href="global.html#RecipeList">RecipeList</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.4</a> on Fri Jun 06 2025 07:28:32 GMT+0000 (Koordinierte Weltzeit)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
